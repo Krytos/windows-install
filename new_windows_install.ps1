@@ -1,3 +1,7 @@
+# TODOs #
+# WSL activation and installing WSL
+# Selection Menu for what to install
+
 param(
     [string]$GitHubToken,
     [switch]$PowerShell7 = $false
@@ -164,7 +168,7 @@ function InstallBasicKit {
 
 function InstallAdvanced {
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
-    winget install -h Obsidian.Obsidian --accept-source-agreements --accept-package-agreements -e
+    winget install Obsidian.Obsidian
     winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
     winget install -h Insomnia.Insomnia --accept-source-agreements --accept-package-agreements -e
     winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e
@@ -178,6 +182,9 @@ function InstallAdvanced {
 }
 
 function AddRegistryEntries {
+    # Restore old context menu
+    New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Value "" -Force
+
     # Add the command for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree\command" -Force |
     Set-ItemProperty -Name "(Default)" -Value "`"C:\Program Files\WizTree\WizTree64.exe`" `"%*1*`""
@@ -185,6 +192,12 @@ function AddRegistryEntries {
     # Add the icon for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree" -Force |
     Set-ItemProperty -Name "Icon" -Value "`"C:\Program Files\WizTree\WizTree64.exe`",0"
+
+    # Disable Windows Search in the taskbar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
+
+    # Disable Task View in Task Bar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
 }
 
 function InstallMedia {
@@ -293,12 +306,17 @@ load(io.popen('oh-my-posh init cmd --config "$env:POSH_THEMES_PATH\night-owl.omp
 
 function QoLRegConfigurations {
     # Registry modifications
+
+    # Disable UAC
+    $UAC_Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+    if (-not (Test-Path $UAC_Path)) {
+        New-Item -Path $UAC_Path -Force | Out-Null
+    }
+    New-ItemProperty -Path $UAC_Path -Name "ConsentPromptBehaviorAdmin" -Value 0 -PropertyType DWord -Force
     # Disable mouse acceleration
     New-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value "0" -PropertyType String -Force
     # Disable Cortana
     New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Force | Out-Null
-    # Disable UAC
-    New-ItemProperty -Path "HKCR:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 0 -PropertyType DWord -Force
     # Open File Explorer to This PC
     New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -PropertyType DWord -Force
     # Enable compact mode

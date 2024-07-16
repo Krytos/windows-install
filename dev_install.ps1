@@ -1,3 +1,7 @@
+# TODOs #
+# WSL activation and installing WSL
+# Selection Menu for what to install
+
 param(
     [string]$GitHubToken,
     [switch]$PowerShell7 = $false
@@ -40,7 +44,7 @@ function InstallAllTheThings {
     RemoveGameBar
     InstallDevTools
     AddRegistryEntries
-      
+
     if (Test-Path "OneDrive\Desktop\Game Macro\autostart.ahk") {
         Start-Process "OneDrive\Desktop\Game Macro\autostart.ahk"
     }
@@ -164,6 +168,9 @@ function InstallAdvanced {
 }
 
 function AddRegistryEntries {
+    # Restore old context menu
+    New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Value "" -Force
+
     # Add the command for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree\command" -Force |
     Set-ItemProperty -Name "(Default)" -Value "`"C:\Program Files\WizTree\WizTree64.exe`" `"%*1*`""
@@ -171,6 +178,76 @@ function AddRegistryEntries {
     # Add the icon for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree" -Force |
     Set-ItemProperty -Name "Icon" -Value "`"C:\Program Files\WizTree\WizTree64.exe`",0"
+
+    # Disable Windows Search in the taskbar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
+
+    # Disable Task View in Task Bar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
+
+    # Unpin items from taskbar (this method might work better)
+    # $appnames = @("Microsoft Edge", "Microsoft Store")
+    # foreach ($app in $appnames) {
+    # ((New-Object -Com Shell.Application).Namespace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() |
+    #     Where-Object { $_.Name -eq $app }).Verbs() |
+    #     Where-Object { $_.Name.replace('&', '') -match 'Unpin from taskbar' } |
+    #     ForEach-Object { $_.DoIt() }
+    # }
+
+    # Pin items to taskbar (using a different method)
+    # $apps = @(
+    #     "C:\Program Files\Firefox Developer Edition\firefox.exe",
+    #     "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+    #     "C:\Program Files\JetBrains\PyCharm\bin\pycharm64.exe"
+    # )
+
+    # foreach ($app in $apps) {
+    #     $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:USERPROFILE\Desktop\temp.lnk")
+    #     $shortcut.TargetPath = $app
+    #     $shortcut.Save()
+
+    #     $shell = New-Object -ComObject "Shell.Application"
+    #     $folder = $shell.Namespace("$env:USERPROFILE\Desktop")
+    #     $item = $folder.ParseName("temp.lnk")
+    #     $item.InvokeVerb("taskbarpin")
+
+    #     Remove-Item "$env:USERPROFILE\Desktop\temp.lnk"
+    # }
+
+    # Function to set Start menu folder visibility
+    # function Set-StartMenuFolder {
+    #     param (
+    #         [string]$FolderName,
+    #         [int]$Value
+    #     )
+    #     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_Show$FolderName" -Value $Value
+    #     Write-Host "Set $FolderName folder visibility to $Value"
+    # }
+
+    # # Enable desired Start menu folders
+    # Set-StartMenuFolder -FolderName "Settings" -Value 1
+    # Set-StartMenuFolder -FolderName "FileExplorer" -Value 1
+    # Set-StartMenuFolder -FolderName "Downloads" -Value 1
+    # Set-StartMenuFolder -FolderName "Network" -Value 1
+
+    # # Optionally, disable other folders if you don't want them
+    # Set-StartMenuFolder -FolderName "Documents" -Value 0
+    # Set-StartMenuFolder -FolderName "Pictures" -Value 0
+    # Set-StartMenuFolder -FolderName "Music" -Value 0
+    # Set-StartMenuFolder -FolderName "Videos" -Value 0
+    # Set-StartMenuFolder -FolderName "PersonalFolder" -Value 0
+
+    # Enable Clipboard History
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableClipboardHistory" -Value 1
+
+    # Enable Clipboard Sync Across Devices (optional)
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableCloudClipboard" -Value 1
+
+    # Restart the Clipboard service to apply changes
+    Stop-Service -Name "cbdhsvc" -Force
+
+    # Restart Explorer to apply changes
+    Stop-Process -Name explorer -Force
 }
 
 function Install-Spotify {
@@ -278,7 +355,11 @@ function QoLRegConfigurations {
     # Disable Cortana
     New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Force | Out-Null
     # Disable UAC
-    New-ItemProperty -Path "HKCR:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value 0 -PropertyType DWord -Force
+    $UAC_Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+    if (-not (Test-Path $UAC_Path)) {
+        New-Item -Path $UAC_Path -Force | Out-Null
+    }
+    New-ItemProperty -Path $UAC_Path -Name "ConsentPromptBehaviorAdmin" -Value 0 -PropertyType DWord -Force
     # Open File Explorer to This PC
     New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -PropertyType DWord -Force
     # Enable compact mode
@@ -476,10 +557,21 @@ function SetupGit {
         }
     }
 
+    function Add-SSHKey {
+        Set-Location $env:USERPROFILE\.ssh
+        # TODO: Fix the pipe
+        Write-Output "" | Write-Output "" | Write-Output "test" | ssh-keygen -t ed25519  -C "kmeinon@gmail.com"
+        # start the ssh-agent in the background
+        Get-Service -Name ssh-agent | Set-Service -StartupType Manual
+        Start-Service ssh-agent
+        # add the key to the ssh-agent
+        ssh-add -K $env:USERPROFILE\.ssh\id_ed25519
+    }
+
     # GitHub CLI authentication
     LoginGitHubCLI -Token $GitHubToken
 }
-                                       
+
 # Call the master function
 
 InstallAllTheThings
