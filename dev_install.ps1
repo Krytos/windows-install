@@ -384,7 +384,7 @@ Import-Module -Name Terminal-Icons
         # "$env:USERPROFILE\OneDrive\Documents\PowerShell\profile.ps1",
         # "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1",
         # "$env:USERPROFILE\OneDrive\Documents\PowerShell\Microsoft.PowerShell_profile.ps1",
-        # "C:\Program Files\PowerShell\7\Profile.ps1"
+        "C:\Program Files\PowerShell\7\Profile.ps1"
     )
 
     foreach ($path in $profilePaths) {
