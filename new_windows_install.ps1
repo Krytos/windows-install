@@ -57,9 +57,9 @@ function InstallAllTheThings {
 function Update-Environment {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     foreach ($level in "Machine", "User") {
-        [Environment]::GetEnvironmentVariables($level).GetEnumerator() | % {
-            if ($_.Name -eq 'Path' -and $_.Value -ne $null) {
-                $_.Value = ($((Get-Content "Env:$($_.Name)") + ";$($_.Value)") -split ';' | Select -unique) -join ';'
+        [Environment]::GetEnvironmentVariables($level).GetEnumerator() | ForEach-Object {
+            if ($_.Name -eq 'Path' -and $null -ne $_.Value) {
+                $_.Value = ($((Get-Content "Env:$($_.Name)") + ";$($_.Value)") -split ';' | Select-Object -unique) -join ';'
             }
             $_
         } | Set-Content -Path { "Env:$($_.Name)" }
@@ -124,8 +124,11 @@ function InstallWinget {
     else {
         Write-ColorOutput Magenta "PowerShell is already installed."
     }
+
     InstallNeededForScript
+
     TerminalStuff
+
     # Check if PowerShell was just installed
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
@@ -252,6 +255,16 @@ function InstallDependencies {
 }
 
 function TerminalStuff {
+    # Start SSH Agent and set it to start automatically
+    function Start-Services {
+        $services = @("ssh-agent")
+        foreach ($service in $services) {
+            Get-Service $service | Set-Service -StartupType Automatic
+            Start-Service $service
+        }
+
+    }
+    Start-Services
     # Install Windows Terminal
     winget install -h "windows terminal" --accept-source-agreements --accept-package-agreements --source "msstore"
     $env:Path += ";C:\Program Files\WindowsApps\$((Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.WindowsTerminal*' -Directory).Name)\wt.exe"
@@ -490,6 +503,7 @@ function SetupGit {
     $env:Path += ";C:\Program Files\Git\cmd"
     Update-Environment
     git config --global user.email "kmeinon@gmail.com"
+    git config --global user.name "Kevin Meinon"
     git config --global --add safe.directory "D:/Games/World of Warcraft/_retail_/WTF"
     Update-Environment
     function LoginGitHubCLI {
