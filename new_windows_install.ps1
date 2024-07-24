@@ -297,7 +297,8 @@ function TerminalStuff {
     # Install Terminal-Icons
     Install-Module -Name Terminal-Icons -Repository PSGallery -Force
     # Install Fonts
-    InstallFonts
+    Update-Environment
+    oh-my-posh font install FiraCode
     # Install Clink and configure it
     winget install clink
     $env:Path += ";C:\Program Files (x86)\clink"
@@ -443,30 +444,6 @@ Import-Module -Name Terminal-Icons
     }
     Update-Environment
 }
-
-function InstallFonts {
-    # Download and install FiraCode Nerd Font
-    Set-Location $env:USERPROFILE"\"Downloads
-    Start-BitsTransfer -Source "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.1/FiraCode.zip" -Destination "FiraCode.zip"
-    Expand-Archive -Path "FiraCode.zip" -DestinationPath "fonts"
-    $fontFiles = @(
-        "FiraCodeNerdFont-Bold.ttf",
-        "FiraCodeNerdFont-Light.ttf",
-        "FiraCodeNerdFont-Medium.ttf",
-        "FiraCodeNerdFont-Regular.ttf",
-        "FiraCodeNerdFont-SemiBold.ttf",
-        "FiraCodeNerdFont-Retina.ttf"
-    )
-
-    foreach ($fontFile in $fontFiles) {
-        Copy-Item "fonts\$fontFile" "$env:SystemRoot\Fonts"
-        New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "Fira Code Nerd ($($fontFile -replace '.ttf',''))" -Value $fontFile -PropertyType String -Force
-    }
-
-    Remove-Item -Path "fonts" -Recurse -Force
-    Remove-Item -Path "FiraCode.zip" -Force
-}
-
 function RemoveGameBar {
     try {
         # Game DVR settings
