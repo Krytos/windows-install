@@ -5,7 +5,7 @@
 param(
     [string]$GitHubToken,
     [switch]$PowerShell7 = $false,
-    [bool]$InitialRun = $false
+    [switch]$InitialRun = $false
 )
 
 # At the beginning of your script
@@ -90,7 +90,7 @@ function RemoveWindowsFeatures {
 # Create functions for different categories of installations and configurations
 function InstallWinget {
 
-    if ($InitialRun) {
+    if ($InitialRun.IsPresent) {
         Write-ColorOutput Green "winget is not installed. Installing winget..."
         Start-BitsTransfer -Source "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" -Destination $env:TEMP\Microsoft.UI.Xaml.2.8.x64.appx
         Add-AppxPackage $env:TEMP\Microsoft.UI.Xaml.2.8.x64.appx
