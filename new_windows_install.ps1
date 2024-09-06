@@ -281,6 +281,8 @@ function InstallDependencies {
 
 function TerminalStuff {
     # Start SSH Agent and set it to start automatically
+    winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e
+    winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e
     function Start-Services {
         $services = @("ssh-agent")
         foreach ($service in $services) {
@@ -571,8 +573,6 @@ function RemoveGameBar {
 }
 
 function SetupGit {
-    winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e
-    winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e
     # Add git to path
     $env:Path += ";C:\Program Files\Git\cmd"
     Update-Environment
