@@ -266,15 +266,8 @@ function InstallMedia {
 }
 
 function InstallDependencies {
-    winget install -h Microsoft.VCRedist.2010.x86 --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2012.x64 --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.DotNet.DesktopRuntime.6 --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2013.x86 --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2013.x64 --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2013.x64 --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2010.x64 --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.XNARedist --accept-source-agreements --accept-package-agreements -e
-    winget install -h Microsoft.VCRedist.2012.x86 --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.VCRedist.2015+.x86 --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.VCRedist.2015+.x64 --accept-source-agreements --accept-package-agreements -e
 }
@@ -468,7 +461,6 @@ function venv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
         `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
-        `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
         if (Test-Path `$activatePath) {
             & `$activatePath
             Write-Host "Activated virtual environment in `$(`$dir.FullName)" -ForegroundColor Green
@@ -479,14 +471,9 @@ function venv {
 venv
 
 function denv {
-function denv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
-<<<<<<< HEAD
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate"
-=======
-        `$deactivatePath = Join-Path `$dir.FullName "Scripts\deactivate"
->>>>>>> 31b20d9 (Changed pwsh profile)
+        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
         if (Test-Path `$deactivatePath) {
             & `$deactivatePath
             Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
@@ -510,7 +497,6 @@ function venv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
         `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
-        `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
         if (Test-Path `$activatePath) {
             & `$activatePath
             Write-Host "Activated virtual environment in `$(`$dir.FullName)" -ForegroundColor Green
@@ -521,16 +507,11 @@ function venv {
 venv
 
 function denv {
-function denv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
-<<<<<<< HEAD
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate"
-=======
-        `$deactivatePath = Join-Path `$dir.FullName "Scripts\deactivate"
->>>>>>> 31b20d9 (Changed pwsh profile)
+        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
         if (Test-Path `$deactivatePath) {
-            & `$activadeactivatePathtePath
+            & `$deactivatePath
             Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
             return
         }
@@ -538,11 +519,30 @@ function denv {
 }
 "@
 
-    Set-Content -Path "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1" -Value $pwsh_profile_content
-    Set-Content -Path "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1" -Value $powershell_profile_content
-    Update-Environment
+    # Ensure the directories exist
+    $pwshProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+    $psProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
 
+    if (-not (Test-Path $pwshProfileDir)) {
+        New-Item -Path $pwshProfileDir -ItemType Directory -Force
+    }
+
+    if (-not (Test-Path $psProfileDir)) {
+        New-Item -Path $psProfileDir -ItemType Directory -Force
+    }
+
+    # Create the profile files
+    Set-Content -Path "$pwshProfileDir\Microsoft.PowerShell_profile.ps1" -Value $pwsh_profile_content
+    Set-Content -Path "$psProfileDir\Microsoft.PowerShell_profile.ps1" -Value $powershell_profile_content
+
+    Write-Host "PowerShell profile files have been created successfully." -ForegroundColor Green
+    Write-Host "Pwsh profile: $pwshProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
+    Write-Host "PowerShell profile: $psProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
+    Update-Environment
 }
+
+
+
 function RemoveGameBar {
     try {
         # Game DVR settings

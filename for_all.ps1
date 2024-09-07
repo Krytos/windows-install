@@ -272,6 +272,7 @@ function TerminalStuff {
     # Start SSH Agent and set it to start automatically
     winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e
     winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e
+    Update-Environment
     function Start-Services {
         $services = @("ssh-agent")
         foreach ($service in $services) {
@@ -400,7 +401,6 @@ function venv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
         `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
-        `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
         if (Test-Path `$activatePath) {
             & `$activatePath
             Write-Host "Activated virtual environment in `$(`$dir.FullName)" -ForegroundColor Green
@@ -411,10 +411,9 @@ function venv {
 venv
 
 function denv {
-function denv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate"
+        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
         if (Test-Path `$deactivatePath) {
             & `$deactivatePath
             Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
@@ -438,7 +437,6 @@ function venv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
         `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
-        `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
         if (Test-Path `$activatePath) {
             & `$activatePath
             Write-Host "Activated virtual environment in `$(`$dir.FullName)" -ForegroundColor Green
@@ -449,12 +447,11 @@ function venv {
 venv
 
 function denv {
-function denv {
     `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
     foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate"
+        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
         if (Test-Path `$deactivatePath) {
-            & `$activadeactivatePathtePath
+            & `$deactivatePath
             Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
             return
         }
@@ -462,11 +459,29 @@ function denv {
 }
 "@
 
-    Set-Content -Path "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1" -Value $pwsh_profile_content
-    Set-Content -Path "$env:USERPROFILE\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1" -Value $powershell_profile_content
-    Update-Environment
+    # Ensure the directories exist
+    $pwshProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+    $psProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
 
+    if (-not (Test-Path $pwshProfileDir)) {
+        New-Item -Path $pwshProfileDir -ItemType Directory -Force
+    }
+
+    if (-not (Test-Path $psProfileDir)) {
+        New-Item -Path $psProfileDir -ItemType Directory -Force
+    }
+
+    # Create the profile files
+    Set-Content -Path "$pwshProfileDir\Microsoft.PowerShell_profile.ps1" -Value $pwsh_profile_content
+    Set-Content -Path "$psProfileDir\Microsoft.PowerShell_profile.ps1" -Value $powershell_profile_content
+
+    Write-Host "PowerShell profile files have been created successfully." -ForegroundColor Green
+    Write-Host "Pwsh profile: $pwshProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
+    Write-Host "PowerShell profile: $psProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
+    Update-Environment
 }
+
+
 function RemoveGameBar {
     try {
         # Game DVR settings
