@@ -46,6 +46,7 @@ function InstallAllTheThings {
     RemoveGameBar
     InstallDevTools
     AddRegistryEntries
+    NvidiaSettings
     PoEStuff
     StartServices
     TakeOwnership
@@ -603,6 +604,99 @@ function SetupGit {
 
     # GitHub CLI authentication
     LoginGitHubCLI -Token $GitHubToken
+}
+
+function NvidiaSettings {
+    # Settings for Nvidia Overlay
+    gallery_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\GallerySettings.json"
+    share_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\ShareSettings.json"
+    if (-not (Test-Path $gallery_settings_path)) {
+        New-Item -Path $gallery_settings_path -ItemType File -Force
+    }
+    if (-not (Test-Path $share_settings_path)) {
+        New-Item -Path $share_settings_path -ItemType File -Force
+    }
+    $gallery_settings = @"
+    {
+        "settings": {
+            "capEnabled": false,
+            "capSizePercent": 100,
+            "currentDirectoryV2": "D:\\Recording\\RAW",
+            "tempDirectory": "C:\\Users\\Kevin\\AppData\\Local\\Temp\\",
+            "trackerUpdateState": "TrackerUpdateComplete"
+        }
+    }
+"@
+    $share_settings = @"
+    {
+	"settings": {
+		"shortcuts": {
+			"OpenIGO": [
+				18,
+				17,
+				78
+			],
+			"Screenshot": [
+				0
+			],
+			"PMOCOverlay": [
+				18,
+				121
+			],
+			"OpenFreestyle": [
+				0
+			],
+			"RecordToggle": [
+				17,
+				117
+			],
+			"OpenAnsel": [
+				0
+			],
+			"DVRSave": [
+				18,
+				117
+			],
+			"DVRToggle": [
+				17,
+				18,
+				117
+			],
+			"MicToggle": [
+				0
+			],
+			"PTT": [
+				0
+			],
+			"FreeStyleToggleStyle1": [],
+			"FreeStyleToggleStyle2": [],
+			"FreeStyleToggleStyle3": [],
+			"PMOCOverlayVisibility": [
+				0
+			],
+			"PMOCOverlayCycle": [
+				17,
+				121
+			],
+			"PMOCResetAverageMetrics": [],
+			"PMOCLoggingToggle": []
+		},
+		"globalhighlights": {
+			"enabled": true
+		},
+		"video": {
+			"irEnabled": false,
+			"irBufferLength": 180
+		},
+		"micmode": {
+			"mode": "on"
+		}
+	}
+}
+"@
+    Set-Content -Path $gallery_settings_path -Value $gallery_settings
+    Set-Content -Path $share_settings_path -Value $share_settings
+    Write-Host "Gallery and Share settings have been created successfully." -ForegroundColor Green
 }
 
 function PoEStuff {
