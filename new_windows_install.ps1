@@ -39,14 +39,14 @@ function InstallAllTheThings {
     }
     InstallDependencies
     QoLRegConfigurations
-    AddRegistryEntries
     RemoveWindowsFeatures
     InstallBasicKit
     InstallAdvanced
     InstallMedia
     RemoveGameBar
     InstallDevTools
-
+    AddRegistryEntries
+    TakeOwnership
     PoEStuff
     if (Test-Path "OneDrive\Desktop\Game Macro\autostart.ahk") {
         Start-Process "OneDrive\Desktop\Game Macro\autostart.ahk"
@@ -237,12 +237,6 @@ function TakeOwnership {
 
 
 function AddRegistryEntries {
-    # Restore old context menu
-    New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Value "" -Force
-
-    # Enable Clipboard History
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableClipboardHistory" -Value 1
-
     # Add the command for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree\command" -Force |
     Set-ItemProperty -Name "(Default)" -Value "`"C:\Program Files\WizTree\WizTree64.exe`" `"%*1*`""
@@ -250,14 +244,6 @@ function AddRegistryEntries {
     # Add the icon for WizTree to the context menu
     New-Item -Path "HKLM:\SOFTWARE\Classes\*\shell\WizTree" -Force |
     Set-ItemProperty -Name "Icon" -Value "`"C:\Program Files\WizTree\WizTree64.exe`",0"
-
-    # Disable Windows Search in the taskbar
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
-
-    # Disable Task View in Task Bar
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
-
-    TakeOwnership
 }
 
 function InstallMedia {
@@ -360,6 +346,14 @@ function QoLRegConfigurations {
     New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1 -PropertyType DWord -Force
     # Show file extensions
     New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0 -PropertyType DWord -Force
+    # Restore old context menu
+    New-Item -Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" -Value "" -Force
+    # Enable Clipboard History
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableClipboardHistory" -Value 1
+    # Disable Windows Search in the taskbar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
+    # Disable Task View in Task Bar
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
     # Find the entry for the UK keyboard layout and remove it
     $registryKey = Get-ItemProperty -Path "HKCU:\Keyboard Layout\Substitutes" -Name "00000809"
     if ($registryKey) {
