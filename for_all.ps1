@@ -45,6 +45,7 @@ function InstallAllTheThings {
     RemoveGameBar
     AddRegistryEntries
     PoEStuff
+    StartServices
     TakeOwnership
 
     if (Test-Path "OneDrive\Desktop\Game Macro\autostart.ahk") {
@@ -249,20 +250,20 @@ function InstallDependencies {
     winget install -h Microsoft.VCRedist.2015+.x64 --accept-source-agreements --accept-package-agreements -e
 }
 
+function StartServices {
+    $services = @("ssh-agent")
+    foreach ($service in $services) {
+        Get-Service $service | Set-Service -StartupType Automatic
+        Start-Service $service
+    }
+
+}
 function TerminalStuff {
     # Start SSH Agent and set it to start automatically
     winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e
     winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e
     Update-Environment
-    function Start-Services {
-        $services = @("ssh-agent")
-        foreach ($service in $services) {
-            Get-Service $service | Set-Service -StartupType Automatic
-            Start-Service $service
-        }
 
-    }
-    Start-Services
     # Install Windows Terminal
     winget install -h 9N0DX20HK701 --accept-source-agreements --accept-package-agreements # Windows Terminal
     $env:Path += ";C:\Program Files\WindowsApps\`$((Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.WindowsTerminal*' -Directory).Name)\wt.exe"
