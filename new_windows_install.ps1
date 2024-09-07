@@ -174,7 +174,7 @@ function InstallBasicKit {
 function InstallAdvanced {
     winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
-    winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e
+    winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
     winget install Obsidian.Obsidian
     winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
     winget install -h Insomnia.Insomnia --accept-source-agreements --accept-package-agreements -e

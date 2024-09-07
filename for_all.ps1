@@ -170,7 +170,7 @@ function InstallBasicKit {
 function InstallAdvanced {
     winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
-    winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e
+    winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
     winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e
     winget install -h Nvidia.PhysX --accept-source-agreements --accept-package-agreements -e
     winget install -h WowUp.CF --accept-source-agreements --accept-package-agreements -e
