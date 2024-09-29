@@ -155,6 +155,7 @@ function InstallBasicKit {
     winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Microsoft.PowerToys --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e
+    winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e
     winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e
     winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
@@ -174,6 +175,10 @@ function InstallBasicKit {
 
 function InstallAdvanced {
     winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e
+    winget install -h Microsoft.Sysinternals.ProcessExplorer --accept-source-agreements --accept-package-agreements -e
+    winget install -h StefanSundin.Superf4 --accept-source-agreements --accept-package-agreements -e # Better Alt+F4 with Ctrl+Alt+F4
+    winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e # One Commander
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
     winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
     winget install Obsidian.Obsidian
