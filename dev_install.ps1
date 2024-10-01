@@ -37,26 +37,16 @@ function InstallAllTheThings {
     else {
         Write-ColorOutput Green "Running in PowerShell 7, skipping Winget installation."
     }
-    InstallDependencies
+    # InstallDependencies
     QoLRegConfigurations
     RemoveWindowsFeatures
     InstallBasicKit
     InstallAdvanced
-    InstallMedia
     RemoveGameBar
     InstallDevTools
     AddRegistryEntries
-    NvidiaSettings
-    PoEStuff
     StartServices
     TakeOwnership
-
-    if (Test-Path "OneDrive\Desktop\Game Macro\autostart.ahk") {
-        Start-Process "OneDrive\Desktop\Game Macro\autostart.ahk"
-    }
-    else {
-        Write-ColorOutput Yellow "autostart.ahk not found in the expected location."
-    }
 }
 
 function Update-Environment {
@@ -154,17 +144,10 @@ function InstallBasicKit {
     Update-Environment
     winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Microsoft.PowerToys --accept-source-agreements --accept-package-agreements -e --disable-interactivity
-    winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e
-    winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e
-    winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e
-    winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
-    winget install -h Valve.Steam --accept-source-agreements --accept-package-agreements -e
     winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force # PotPlayer
-    winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
     winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e
     winget install -h Nvidia.Broadcast --accept-source-agreements --accept-package-agreements -e
-    winget install -h TeamSpeakSystems.TeamSpeakClient.Beta --accept-source-agreements --accept-package-agreements -e
     winget install -h Telegram.TelegramDesktop --accept-source-agreements --accept-package-agreements -e
     winget install -h 9N8G7TSCL18R --accept-source-agreements --accept-package-agreements -e # NanaZip
     winget install -h Google.QuickShare --accept-source-agreements --accept-package-agreements -e --disable-interactivity
@@ -174,23 +157,15 @@ function InstallBasicKit {
 }
 
 function InstallAdvanced {
-    winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.Sysinternals.ProcessExplorer --accept-source-agreements --accept-package-agreements -e
     winget install -h StefanSundin.Superf4 --accept-source-agreements --accept-package-agreements -e # Better Alt+F4 with Ctrl+Alt+F4
     winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e # One Commander
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
-    winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
     winget install Obsidian.Obsidian
-    winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
     winget install -h Bruno.Bruno --accept-source-agreements --accept-package-agreements -e
-    winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e
     winget install -h WinSCP.WinSCP --accept-source-agreements --accept-package-agreements -e
     winget install -h voidtools.Everything --accept-source-agreements --accept-package-agreements -e
-    winget install -h Nvidia.PhysX --accept-source-agreements --accept-package-agreements -e
-    winget install -h WowUp.CF --accept-source-agreements --accept-package-agreements -e
-    winget install -h UnifiedIntents.UnifiedRemote --accept-source-agreements --accept-package-agreements -e
-    winget install -h HandBrake.HandBrake --accept-source-agreements --accept-package-agreements -e
 }
 
 
@@ -254,10 +229,6 @@ function AddRegistryEntries {
     Set-ItemProperty -Name "Icon" -Value "`"C:\Program Files\WizTree\WizTree64.exe`",0"
 }
 
-function InstallMedia {
-    winget install -h Jellyfin.JellyfinMediaPlayer --accept-source-agreements --accept-package-agreements -e
-    winget install -h XBMCFoundation.Kodi --accept-source-agreements --accept-package-agreements -e
-}
 
 function InstallDependencies {
     winget install -h Microsoft.DotNet.DesktopRuntime.6 --accept-source-agreements --accept-package-agreements -e
@@ -409,7 +380,7 @@ function InstallPythonAndPackages {
         uv python install $version
     }
 
-    $pythonTools = @("hashcat", "ipython", "nuitka", "ruff")
+    $pythonTools = @("hashcat", "ipython", "ruff")
     foreach ($tool in $pythonTools) {
         uv tool install $tool
     }
@@ -609,175 +580,6 @@ function SetupGit {
 
     # GitHub CLI authentication
     LoginGitHubCLI -Token $GitHubToken
-}
-
-function NvidiaSettings {
-    # Settings for Nvidia Overlay
-    gallery_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\GallerySettings.json"
-    share_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\ShareSettings.json"
-    if (-not (Test-Path $gallery_settings_path)) {
-        New-Item -Path $gallery_settings_path -ItemType File -Force
-    }
-    if (-not (Test-Path $share_settings_path)) {
-        New-Item -Path $share_settings_path -ItemType File -Force
-    }
-    $gallery_settings = @"
-    {
-        "settings": {
-            "capEnabled": false,
-            "capSizePercent": 100,
-            "currentDirectoryV2": "D:\\Recording\\RAW",
-            "tempDirectory": "C:\\Users\\Kevin\\AppData\\Local\\Temp\\",
-            "trackerUpdateState": "TrackerUpdateComplete"
-        }
-    }
-"@
-    $share_settings = @"
-    {
-	"settings": {
-		"shortcuts": {
-			"OpenIGO": [
-				18,
-				17,
-				78
-			],
-			"Screenshot": [
-				0
-			],
-			"PMOCOverlay": [
-				18,
-				121
-			],
-			"OpenFreestyle": [
-				0
-			],
-			"RecordToggle": [
-				17,
-				117
-			],
-			"OpenAnsel": [
-				0
-			],
-			"DVRSave": [
-				18,
-				117
-			],
-			"DVRToggle": [
-				17,
-				18,
-				117
-			],
-			"MicToggle": [
-				0
-			],
-			"PTT": [
-				0
-			],
-			"FreeStyleToggleStyle1": [],
-			"FreeStyleToggleStyle2": [],
-			"FreeStyleToggleStyle3": [],
-			"PMOCOverlayVisibility": [
-				0
-			],
-			"PMOCOverlayCycle": [
-				17,
-				121
-			],
-			"PMOCResetAverageMetrics": [],
-			"PMOCLoggingToggle": []
-		},
-		"globalhighlights": {
-			"enabled": true
-		},
-		"video": {
-			"irEnabled": false,
-			"irBufferLength": 180
-		},
-		"micmode": {
-			"mode": "on"
-		}
-	}
-}
-"@
-    Set-Content -Path $gallery_settings_path -Value $gallery_settings
-    Set-Content -Path $share_settings_path -Value $share_settings
-    Write-Host "Gallery and Share settings have been created successfully." -ForegroundColor Green
-}
-
-function PoEStuff {
-    # Download and run PoeLurkerSetup
-    function DownloadAndInstallPoeLurker {
-        $downloadPath = Join-Path $env:TEMP "PoeLurkerSetup.exe"
-        $url = "https://github.com/C1rdec/Poe-Lurker/releases/latest/download/PoeLurkerSetup.exe"
-
-        try {
-            # Download the file
-            Write-ColorOutput Green "Downloading PoeLurker..."
-            Start-BitsTransfer -Source $url -Destination $downloadPath
-
-            # Check if the file was downloaded successfully
-            if (Test-Path $downloadPath) {
-                Write-ColorOutput Green "Download completed. Installing PoeLurker..."
-
-                # Install the application
-                Start-Process -FilePath $downloadPath -ArgumentList "/VERYSILENT"
-
-                Write-ColorOutput Green "PoeLurker installation completed."
-            }
-            else {
-                Write-Error "Failed to download PoeLurker."
-            }
-        }
-        catch {
-            Write-Error "An error occurred: $_"
-        }
-    }
-
-    function DownloadAndInstallAwakenedPoeTrade {
-        $repo = "SnosMe/awakened-poe-trade"
-        $filePattern = "Awakened-PoE-Trade-Setup-*.exe"
-        $downloadPath = Join-Path $env:TEMP "AwakenedPoeTradeSetup.exe"
-
-        try {
-            # Fetch the latest release information
-            $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest"
-
-            # Find the asset URL for the Awakened-PoE-Trade-Setup-*.exe file
-            $assetUrl = $releaseInfo.assets | Where-Object { $_.name -like $filePattern } | Select-Object -ExpandProperty browser_download_url -First 1
-
-            if (-not $assetUrl) {
-                Write-Error "Could not find $filePattern in the latest release."
-                return
-            }
-
-            # Download the file
-            Write-ColorOutput Green "Downloading Awakened PoE Trade..."
-            Start-BitsTransfer -Source $assetUrl -Destination $downloadPath
-
-            # Check if the file was downloaded successfully
-            if (Test-Path $downloadPath) {
-                Write-ColorOutput Green "Download completed. Installing Awakened PoE Trade..."
-
-                # Install the application
-                $installPath = "$env:USERPROFILE\AppData\Local\Awakened PoE Trade"
-                Start-Process -FilePath $downloadPath -ArgumentList "/S /D=`"$installPath`"" -Wait
-
-                if (Test-Path "C:\Utility Account\AppData\Local\Programs\Awakened PoE Trade\Awakened PoE Trade.lnk") {
-                    Remove-Item "C:\Utility Account\AppData\Local\Programs\Awakened PoE Trade\Awakened PoE Trade.lnk"
-                }
-            }
-            else {
-                Write-Error "Failed to download Awakened PoE Trade."
-            }
-        }
-        catch {
-            Write-Error "An error occurred: $_"
-        }
-    }
-
-    DownloadAndInstallPoeLurker
-    DownloadAndInstallAwakenedPoeTrade
-    winget install -h PathofBuildingCommunity.PathofBuildingCommunity --accept-source-agreements --accept-package-agreements -e
 }
 
 # Call the master function
