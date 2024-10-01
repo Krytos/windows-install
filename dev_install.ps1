@@ -8,15 +8,26 @@ param(
     [switch]$InitialRun = $false
 )
 
-# At the beginning of your script
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    $PowerShell7 = $true
+function Write-ColorOutput($ForegroundColor) {
+    $fc = $host.UI.RawUI.ForegroundColor
+    $host.UI.RawUI.ForegroundColor = $ForegroundColor
+    if ($args) {
+        Write-Output $args
+    }
+    else {
+        $input | Write-Output
+    }
+    $host.UI.RawUI.ForegroundColor = $fc
 }
 
-if ($InitialRun -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
-    # Create a flag file
+# Check if running in PowerShell 7
+$PowerShell7 = $PSVersionTable.PSVersion.Major -ge 7
+
+if ($InitialRun -and $PowerShell7) {
+    # Create a flag file to signal the batch file to restart
+    Write-ColorOutput Green "Initial run completed in PowerShell 7. Creating flag file..."
     New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
-    # Exit this PowerShell session
+    # Exit to allow the batch file to handle the restart
     exit
 }
 
@@ -61,17 +72,7 @@ function Update-Environment {
     }
 }
 
-function Write-ColorOutput($ForegroundColor) {
-    $fc = $host.UI.RawUI.ForegroundColor
-    $host.UI.RawUI.ForegroundColor = $ForegroundColor
-    if ($args) {
-        Write-Output $args
-    }
-    else {
-        $input | Write-Output
-    }
-    $host.UI.RawUI.ForegroundColor = $fc
-}
+
 
 function RemoveWindowsFeatures {
     # Disable Windows Media Player
@@ -111,24 +112,19 @@ function InstallWinget {
         Update-Environment
         Install-PackageProvider -Name NuGet -Force
         Update-Environment
+
+        # Create the flag file after installing PowerShell 7
+        Write-ColorOutput Green "PowerShell 7 has been installed. Creating flag file for restart..."
+        New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
     }
     else {
-
         Write-ColorOutput Magenta "PowerShell is already installed."
     }
+
 
     InstallNeededForScript
 
     TerminalStuff
-
-    # Check if PowerShell was just installed
-    if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
-        if (-not $InitialRun) {
-            Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`""
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-    }
 }
 
 function InstallNeededForScript {
@@ -345,16 +341,20 @@ function QoLRegConfigurations {
     $path = "HKCU:\Keyboard Layout\Preload"
 
     foreach ($layout in $layoutsToRemove) {
+
         $preload = Get-ItemProperty -Path $path
         $toRemove = $preload.PSObject.Properties | Where-Object { $_.Value -eq $layout }
 
-        if ($toRemove) {
-            Remove-ItemProperty -Path $path -Name $toRemove.Name
-            Write-Host "Layout $layout removed successfully."
+        try {
+            if ($toRemove) {
+                Remove-ItemProperty -Path $path -Name $toRemove.Name
+                Write-Host "Layout $layout removed successfully."
+            }
         }
-        else {
+        catch {
             Write-Host "Layout $layout not found."
         }
+
     }
 
     Write-Host "`nCurrent Preload entries:"
