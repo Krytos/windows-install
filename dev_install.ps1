@@ -8,16 +8,31 @@ param(
     [switch]$InitialRun = $false
 )
 
-# At the beginning of your script
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    $PowerShell7 = $true
+# Check if running in PowerShell 7
+$PowerShell7 = $PSVersionTable.PSVersion.Major -ge 7
+
+if (-not $PowerShell7) {
+    Write-ColorOutput Green "PowerShell 7 is not installed. Installing PowerShell 7..."
+    # Install PowerShell 7 using winget or another method
+    winget install --id Microsoft.Powershell --source winget
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorOutput Green "PowerShell has been installed. Restarting script in PowerShell 7..."
+        Start-Process pwsh -ArgumentList "-NoExit", "-File `"$PSCommandPath`"", "-GitHubToken `"$GitHubToken`"", "-InitialRun" -Wait
+        exit
+    }
+    else {
+        Write-Error "Failed to install PowerShell 7. Exiting script."
+        exit 1
+    }
 }
 
-if ($InitialRun -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
-    # Create a flag file
-    New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
-    # Exit this PowerShell session
-    exit
+if ($InitialRun) {
+    Write-ColorOutput Green "Script is now running in PowerShell 7."
+    # Optionally remove the flag file if it was used
+    if (Test-Path "$env:TEMP\restart_pwsh.flag") {
+        Remove-Item "$env:TEMP\restart_pwsh.flag"
+    }
 }
 
 # Rest of your script goes here
@@ -125,7 +140,7 @@ function InstallWinget {
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
         if (-not $InitialRun) {
-            Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`""
+            Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`" -InitialRun"
             [System.Diagnostics.Process]::GetCurrentProcess().Kill()
         }
     }
@@ -345,16 +360,20 @@ function QoLRegConfigurations {
     $path = "HKCU:\Keyboard Layout\Preload"
 
     foreach ($layout in $layoutsToRemove) {
+
         $preload = Get-ItemProperty -Path $path
         $toRemove = $preload.PSObject.Properties | Where-Object { $_.Value -eq $layout }
 
-        if ($toRemove) {
-            Remove-ItemProperty -Path $path -Name $toRemove.Name
-            Write-Host "Layout $layout removed successfully."
+        try {
+            if ($toRemove) {
+                Remove-ItemProperty -Path $path -Name $toRemove.Name
+                Write-Host "Layout $layout removed successfully."
+            }
         }
-        else {
+        catch {
             Write-Host "Layout $layout not found."
         }
+
     }
 
     Write-Host "`nCurrent Preload entries:"
