@@ -118,6 +118,7 @@ function InstallWinget {
         # Create the flag file after installing PowerShell 7
         Write-ColorOutput Green "PowerShell 7 has been installed. Creating flag file for restart..."
         New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
+        exit
     }
     else {
         Write-ColorOutput Magenta "PowerShell is already installed."
