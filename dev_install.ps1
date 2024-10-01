@@ -112,7 +112,9 @@ function InstallWinget {
         Update-Environment
         Install-PackageProvider -Name NuGet -Force
         Update-Environment
-
+        InstallNeededForScript
+        TerminalStuff
+        Update-Environment
         # Create the flag file after installing PowerShell 7
         Write-ColorOutput Green "PowerShell 7 has been installed. Creating flag file for restart..."
         New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
@@ -120,11 +122,6 @@ function InstallWinget {
     else {
         Write-ColorOutput Magenta "PowerShell is already installed."
     }
-
-
-    InstallNeededForScript
-    TerminalStuff
-    exit
 }
 
 function InstallNeededForScript {
