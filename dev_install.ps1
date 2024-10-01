@@ -8,7 +8,6 @@ param(
     [switch]$InitialRun = $false
 )
 
-<<<<<<< HEAD
 function Write-ColorOutput($ForegroundColor) {
     $fc = $host.UI.RawUI.ForegroundColor
     $host.UI.RawUI.ForegroundColor = $ForegroundColor
@@ -30,33 +29,6 @@ if ($InitialRun -and $PowerShell7) {
     New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
     # Exit to allow the batch file to handle the restart
     exit
-=======
-# Check if running in PowerShell 7
-$PowerShell7 = $PSVersionTable.PSVersion.Major -ge 7
-
-if (-not $PowerShell7) {
-    Write-ColorOutput Green "PowerShell 7 is not installed. Installing PowerShell 7..."
-    # Install PowerShell 7 using winget or another method
-    winget install --id Microsoft.Powershell --source winget
-
-    if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput Green "PowerShell has been installed. Restarting script in PowerShell 7..."
-        Start-Process pwsh -ArgumentList "-NoExit", "-File `"$PSCommandPath`"", "-GitHubToken `"$GitHubToken`"", "-InitialRun" -Wait
-        exit
-    }
-    else {
-        Write-Error "Failed to install PowerShell 7. Exiting script."
-        exit 1
-    }
-}
-
-if ($InitialRun) {
-    Write-ColorOutput Green "Script is now running in PowerShell 7."
-    # Optionally remove the flag file if it was used
-    if (Test-Path "$env:TEMP\restart_pwsh.flag") {
-        Remove-Item "$env:TEMP\restart_pwsh.flag"
-    }
->>>>>>> fcbe1a9dbed161bd41c15540506d8e01d083e4e9
 }
 
 # Rest of your script goes here
@@ -153,18 +125,6 @@ function InstallWinget {
     InstallNeededForScript
 
     TerminalStuff
-<<<<<<< HEAD
-=======
-
-    # Check if PowerShell was just installed
-    if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
-        if (-not $InitialRun) {
-            Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`" -InitialRun"
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-    }
->>>>>>> fcbe1a9dbed161bd41c15540506d8e01d083e4e9
 }
 
 function InstallNeededForScript {
