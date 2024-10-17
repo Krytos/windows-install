@@ -250,7 +250,7 @@ function InstallBasicKit {
     winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e
     winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
-
+    winget install -h Xanashi.Icaros --accept-source-agreements --accept-package-agreements -e --source winget # Icaros Shell Extension for thumbnails
     winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force # PotPlayer
     winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
     winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e
