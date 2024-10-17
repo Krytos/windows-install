@@ -252,7 +252,7 @@ function InstallBasicKit {
     winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
     winget install -h Xanashi.Icaros --accept-source-agreements --accept-package-agreements -e --source winget # Icaros Shell Extension for thumbnails
     winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force # PotPlayer
-    winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
+    InstallJdownloader
     winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e
     winget install -h Nvidia.Broadcast --accept-source-agreements --accept-package-agreements -e
 
@@ -262,6 +262,11 @@ function InstallBasicKit {
     winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e
     winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e # Spotify
+}
+
+function InstallJdownloader {
+    winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/jdownloader.json" -Destination "C:\Program Files\JDownloader\cfg\org.jdownloader.controlling.filter.LinkFilterSettings.filterlist.json"
 }
 
 function InstallAdvanced {

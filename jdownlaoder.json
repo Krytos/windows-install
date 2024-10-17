@@ -1,0 +1,468 @@
+[
+    {
+        "accept": true,
+        "conditionFilter": {
+            "conditions": null,
+            "matchType": "IS_TRUE",
+            "enabled": false
+        },
+        "created": 1729145752727,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS",
+            "archivesEnabled": false,
+            "audioFilesEnabled": false,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": false,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": false,
+            "enabled": false
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "iconKey": "download",
+        "id": "DirectHTTPView",
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Direct HTTP",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": false
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": null,
+            "enabled": false
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "ISNOT",
+            "pluginStatus": "NO_DIRECT_HTTP",
+            "enabled": true
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "testUrl": null,
+        "enabled": false,
+        "staticRule": true
+    },
+    {
+        "accept": true,
+        "conditionFilter": {
+            "conditions": null,
+            "matchType": "IS_TRUE",
+            "enabled": false
+        },
+        "created": 1729145752728,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS",
+            "archivesEnabled": false,
+            "audioFilesEnabled": false,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": false,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": false,
+            "enabled": false
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "iconKey": "error",
+        "id": "OfflineView",
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Offline Files",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": true
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": null,
+            "enabled": false
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "IS",
+            "pluginStatus": "PREMIUM",
+            "enabled": false
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "testUrl": null,
+        "enabled": true,
+        "staticRule": true
+    },
+    {
+        "accept": true,
+        "conditionFilter": {
+            "conditions": [
+                "DOWNLOAD_LIST_DUPE"
+            ],
+            "matchType": "IS_TRUE",
+            "enabled": true
+        },
+        "created": 1729145752728,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS",
+            "archivesEnabled": false,
+            "audioFilesEnabled": false,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": false,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": false,
+            "enabled": false
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "iconKey": "copy",
+        "id": "DupesView",
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Already in Downloadlist",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": false
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": null,
+            "enabled": false
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "IS",
+            "pluginStatus": "PREMIUM",
+            "enabled": false
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": null,
+            "useRegex": false,
+            "enabled": false
+        },
+        "testUrl": null,
+        "enabled": true,
+        "staticRule": true
+    },
+    {
+        "accept": false,
+        "conditionFilter": {
+            "conditions": [],
+            "matchType": "IS_TRUE",
+            "enabled": false
+        },
+        "created": 1727690800349,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS",
+            "archivesEnabled": false,
+            "audioFilesEnabled": false,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": false,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": false,
+            "enabled": false
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "iconKey": null,
+        "id": null,
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Youtube (No Clipboard Grabber)",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": false
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": [
+                "CLIPBOARD"
+            ],
+            "enabled": true
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "IS",
+            "pluginStatus": "PREMIUM",
+            "enabled": false
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": "youtube",
+            "useRegex": false,
+            "enabled": true
+        },
+        "testUrl": "https://www.youtube.com/watch?v=w1Gi1dMW6ng",
+        "enabled": true,
+        "staticRule": false
+    },
+    {
+        "accept": false,
+        "conditionFilter": {
+            "conditions": [],
+            "matchType": "IS_TRUE",
+            "enabled": false
+        },
+        "created": 1727766291857,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS",
+            "archivesEnabled": false,
+            "audioFilesEnabled": false,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": false,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": false,
+            "enabled": false
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": ".*github.*",
+            "useRegex": true,
+            "enabled": false
+        },
+        "iconKey": null,
+        "id": null,
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Github",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": false
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": [],
+            "enabled": false
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "IS",
+            "pluginStatus": "PREMIUM",
+            "enabled": false
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": "github.com",
+            "useRegex": false,
+            "enabled": true
+        },
+        "testUrl": "https://github.com/C1rdec/Poe-Lurker/releases/latest/download/PoeLurkerSetup.exe",
+        "enabled": true,
+        "staticRule": false
+    },
+    {
+        "accept": false,
+        "conditionFilter": {
+            "conditions": [],
+            "matchType": "IS_TRUE",
+            "enabled": false
+        },
+        "created": 1729146281152,
+        "filenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "filesizeFilter": {
+            "from": 0,
+            "matchType": "BETWEEN",
+            "to": 0,
+            "enabled": false
+        },
+        "filetypeFilter": {
+            "customs": null,
+            "matchType": "IS_NOT",
+            "archivesEnabled": false,
+            "audioFilesEnabled": true,
+            "docFilesEnabled": false,
+            "exeFilesEnabled": false,
+            "hashEnabled": false,
+            "imagesEnabled": true,
+            "subFilesEnabled": false,
+            "useRegex": false,
+            "videoFilesEnabled": true,
+            "enabled": true
+        },
+        "hosterURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "iconKey": null,
+        "id": null,
+        "matchAlwaysFilter": {
+            "enabled": false
+        },
+        "name": "Youtube (only video / audio)",
+        "onlineStatusFilter": {
+            "matchType": "IS",
+            "onlineStatus": "OFFLINE",
+            "enabled": false
+        },
+        "originFilter": {
+            "matchType": "IS",
+            "origins": [],
+            "enabled": false
+        },
+        "packagenameFilter": {
+            "matchType": "CONTAINS",
+            "regex": "",
+            "useRegex": false,
+            "enabled": false
+        },
+        "pluginStatusFilter": {
+            "matchType": "IS",
+            "pluginStatus": "PREMIUM",
+            "enabled": false
+        },
+        "sourceURLFilter": {
+            "matchType": "CONTAINS",
+            "regex": "youtube",
+            "useRegex": true,
+            "enabled": true
+        },
+        "testUrl": "https://www.youtube.com/watch?v=9m8vdbbnx-I",
+        "enabled": true,
+        "staticRule": false
+    }
+]
