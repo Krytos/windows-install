@@ -51,11 +51,18 @@ function InstallAllTheThings {
     StartServices
     TakeOwnership
 
-    if (Test-Path "OneDrive\Desktop\Game Macro\autostart.ahk") {
-        Start-Process "OneDrive\Desktop\Game Macro\autostart.ahk"
+    if (Test-Path "autostart.ahk") {
+        Start-Process "autostart.ahk"
     }
     else {
-        Write-ColorOutput Yellow "autostart.ahk not found in the expected location."
+        Write-ColorOutput Green "Downloading Autostart.ahk..."
+        Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/autostart.ahk" -Destination "autostart.ahk"
+        if (Test-Path "autostart.ahk") {
+            Start-Process "autostart.ahk"
+        }
+        else {
+            Write-ColorOutput Red "Failed to download autostart.ahk."
+        }
     }
 }
 
