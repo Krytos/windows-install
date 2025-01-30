@@ -208,5 +208,5 @@ Manga()
 RunOnce()
 {
     Run(userprofile "\OneDrive\Code\Batch\winget_update.cmd", , "Hide")
-    Run("cmd.exe /c uv self update && uv python install 313 -r", , "Hide")
+    Run("cmd.exe /c uv self update", , "Hide")
 }

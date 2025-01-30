@@ -383,6 +383,8 @@ function PowerShellProfileSettings {
 oh-my-posh init pwsh --config "`$env:POSH_THEMES_PATH\night-owl.omp.json" | Invoke-Expression
 Import-Module -Name Terminal-Icons
 
+Set-Alias denv Deactivate
+
 function mklink (`$target, `$link) {
     New-Item -Path `$link -ItemType SymbolicLink -Value `$target
 }
@@ -399,18 +401,6 @@ function venv {
     }
 }
 venv
-
-function denv {
-    `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
-    foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
-        if (Test-Path `$deactivatePath) {
-            & `$deactivatePath
-            Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
-            return
-        }
-    }
-}
 "@
 
     $powershell_profile_content = @"
@@ -419,6 +409,8 @@ function denv {
 oh-my-posh init pwsh --config "`$env:POSH_THEMES_PATH\night-owl.omp.json" | Invoke-Expression
 Import-Module -Name Terminal-Icons
 
+Set-Alias denv Deactivate
+
 function mklink (`$target, `$link) {
     New-Item -Path `$link -ItemType SymbolicLink -Value `$target
 }
@@ -435,18 +427,6 @@ function venv {
     }
 }
 venv
-
-function denv {
-    `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
-    foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
-        if (Test-Path `$deactivatePath) {
-            & `$deactivatePath
-            Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
-            return
-        }
-    }
-}
 "@
 
     # Ensure the directories exist
@@ -470,6 +450,7 @@ function denv {
     Write-Host "PowerShell profile: $psProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
     Update-Environment
 }
+
 
 
 function RemoveGameBar {

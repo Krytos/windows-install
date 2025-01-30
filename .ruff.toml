@@ -1,0 +1,33 @@
+line-length = 100
+indent-width = 4
+target-version = 'py313'
+show-fixes = true
+fix = true
+exclude = ["migrations"]
+
+[lint]
+logger-objects = ["loguru.logger"]
+unfixable = []
+extend-safe-fixes = ["E721", "E712", "F811"]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = ["SIM116", "E501"]
+
+[format]
+docstring-code-format = true
+line-ending = "lf"
+
+[analyze]
+detect-string-imports = true

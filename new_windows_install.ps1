@@ -1,6 +1,12 @@
 # TODOs #
-# WSL activation and installing WSL
+# WSL activation and installing WSL and adding .bashrc
 # Selection Menu for what to install
+# Update profile.ps1
+# Edit Oh-My-Posh theme: blocks > segments > "type": "executiontime"; change "style": "roundrock" -> "style": "austin"
+# Edit Oh-My-Posh theme: blocks > segments > "type": "os"; change -> "template": " {{ if eq .UserName \"kali\"}}Kali at \uF316{{ else if  .WSL }}WSL at {{.Icon}}{{ else }}{{.Icon}}{{ end }} ",
+# Add ruff and uv config files: %APPDATA%\ruff\ruff.toml and %APPDATA%\uv\uv.toml
+# Add Catppuccin Themes to everything
+# Use this script for "Windows Files" theme install: `$host.UI | Add-Member -MemberType ScriptMethod -Name PromptForChoice -Value { $args[3] } -Force; . { iwr -UseBasicParsing https://github.com/catppuccin/windows-files/raw/main/install.ps1 } | iex`
 
 param(
     [string]$GitHubToken,
@@ -269,6 +275,7 @@ function InstallBasicKit {
     winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e
     winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e # Spotify
+    winget install --id lsd-rs.lsd
 }
 
 function InstallJdownloader {
@@ -283,6 +290,7 @@ function InstallAdvanced {
     winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e # One Commander
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
+    winget install -h "Flow Launcher" --accept-source-agreements --accept-package-agreements -e
 
     winget install Obsidian.Obsidian
     winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
@@ -564,6 +572,8 @@ function PowerShellProfileSettings {
 oh-my-posh init pwsh --config "`$env:POSH_THEMES_PATH\night-owl.omp.json" | Invoke-Expression
 Import-Module -Name Terminal-Icons
 
+Set-Alias denv Deactivate
+
 function mklink (`$target, `$link) {
     New-Item -Path `$link -ItemType SymbolicLink -Value `$target
 }
@@ -580,18 +590,6 @@ function venv {
     }
 }
 venv
-
-function denv {
-    `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
-    foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
-        if (Test-Path `$deactivatePath) {
-            & `$deactivatePath
-            Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
-            return
-        }
-    }
-}
 "@
 
     $powershell_profile_content = @"
@@ -600,6 +598,8 @@ function denv {
 oh-my-posh init pwsh --config "`$env:POSH_THEMES_PATH\night-owl.omp.json" | Invoke-Expression
 Import-Module -Name Terminal-Icons
 
+Set-Alias denv Deactivate
+
 function mklink (`$target, `$link) {
     New-Item -Path `$link -ItemType SymbolicLink -Value `$target
 }
@@ -616,18 +616,6 @@ function venv {
     }
 }
 venv
-
-function denv {
-    `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
-    foreach (`$dir in `$venvDirs) {
-        `$deactivatePath = Join-Path `$dir.Name "Scripts\deactivate.bat"
-        if (Test-Path `$deactivatePath) {
-            & `$deactivatePath
-            Write-Host "Deactivated virtual environment" -ForegroundColor Yellow
-            return
-        }
-    }
-}
 "@
 
     # Ensure the directories exist

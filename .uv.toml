@@ -1,0 +1,9 @@
+default-groups = ["dev"]
+dependency-groups.dev = []
+concurrent-downloads = 100
+link-mode = "symlink"
+no-binary-package = ["pyinstaller"]
+
+[pip]
+python = "3.13"
+compile-bytecode = true
