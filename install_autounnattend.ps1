@@ -135,7 +135,6 @@ function InstallWinget {
 
     TerminalStuff
 
-    # Check if PowerShell was just installed
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput Green "PowerShell has been installed."
         # Always attempt restart during InitialRun if PS was just installed
@@ -164,6 +163,40 @@ function InstallNeededForScript {
     winget install -h wget --accept-source-agreements --accept-package-agreements -e
 }
 
+function DownlaodInstallGithub($name, $repo, $filePattern) {
+
+    $downloadPath = Join-Path $env:TEMP "$($filePattern.Split("*")[0].TrimEnd("-")).exe"
+
+    try {
+        # Fetch the latest release information
+        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest"
+
+        # Find the asset URL for the Awakened-PoE-Trade-Setup-*.exe file
+        $assetUrl = $releaseInfo.assets | Where-Object { $_.name -like $filePattern } | Select-Object -ExpandProperty browser_download_url -First 1
+
+        if (-not $assetUrl) {
+            Write-Error "Could not find $filePattern in the latest release."
+            return
+        }
+
+        # Download the file
+        Write-ColorOutput Green "Downloading $name..."
+        Start-BitsTransfer -Source $assetUrl -Destination $downloadPath
+
+        # Check if the file was downloaded successfully
+        if (Test-Path $downloadPath) {
+            Write-ColorOutput Green "Download completed. Installing $name..."
+            Start-Process -FilePath $downloadPath -ArgumentList "/S" -Wait
+        }
+        else {
+            Write-Error "Failed to download $name."
+        }
+    }
+    catch {
+        Write-Error "An error occurred: $_"
+    }
+}
+
 function Gaming {
 
     function wow {
@@ -174,77 +207,8 @@ function Gaming {
 
     function poe {
         # Download and run PoeLurkerSetup
-        function DownloadAndInstallPoeLurker {
-            $downloadPath = Join-Path $env:TEMP "PoeLurkerSetup.exe"
-            $url = "https://github.com/C1rdec/Poe-Lurker/releases/latest/download/PoeLurkerSetup.exe"
-
-            try {
-                # Download the file
-                Write-ColorOutput Green "Downloading PoeLurker..."
-                Start-BitsTransfer -Source $url -Destination $downloadPath
-
-                # Check if the file was downloaded successfully
-                if (Test-Path $downloadPath) {
-                    Write-ColorOutput Green "Download completed. Installing PoeLurker..."
-
-                    # Install the application
-                    Start-Process -FilePath $downloadPath -ArgumentList "/VERYSILENT"
-
-                    Write-ColorOutput Green "PoeLurker installation completed."
-                }
-                else {
-                    Write-Error "Failed to download PoeLurker."
-                }
-            }
-            catch {
-                Write-Error "An error occurred: $_"
-            }
-        }
-
-        function DownloadAndInstallAwakenedPoeTrade {
-            $repo = "SnosMe/awakened-poe-trade"
-            $filePattern = "Awakened-PoE-Trade-Setup-*.exe"
-            $downloadPath = Join-Path $env:TEMP "AwakenedPoeTradeSetup.exe"
-
-            try {
-                # Fetch the latest release information
-                $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest"
-
-                # Find the asset URL for the Awakened-PoE-Trade-Setup-*.exe file
-                $assetUrl = $releaseInfo.assets | Where-Object { $_.name -like $filePattern } | Select-Object -ExpandProperty browser_download_url -First 1
-
-                if (-not $assetUrl) {
-                    Write-Error "Could not find $filePattern in the latest release."
-                    return
-                }
-
-                # Download the file
-                Write-ColorOutput Green "Downloading Awakened PoE Trade..."
-                Start-BitsTransfer -Source $assetUrl -Destination $downloadPath
-
-                # Check if the file was downloaded successfully
-                if (Test-Path $downloadPath) {
-                    Write-ColorOutput Green "Download completed. Installing Awakened PoE Trade..."
-
-                    # Install the application
-                    $installPath = "$env:USERPROFILE\AppData\Local\Awakened PoE Trade"
-                    Start-Process -FilePath $downloadPath -ArgumentList "/S /D=`"$installPath`"" -Wait
-
-                    if (Test-Path "C:\Utility Account\AppData\Local\Programs\Awakened PoE Trade\Awakened PoE Trade.lnk") {
-                        Remove-Item "C:\Utility Account\AppData\Local\Programs\Awakened PoE Trade\Awakened PoE Trade.lnk"
-                    }
-                }
-                else {
-                    Write-Error "Failed to download Awakened PoE Trade."
-                }
-            }
-            catch {
-                Write-Error "An error occurred: $_"
-            }
-        }
-
-        DownloadAndInstallPoeLurker
-        DownloadAndInstallAwakenedPoeTrade
+        DownlaodInstallGithub "PoELurker" "C1rdec/Poe-Lurker" "PoeLurkerSetup*.exe"
+        DownlaodInstallGithub "AwakenedPoeTrade" "SnosMe/awakened-poe-trade" "Awakened-PoE-Trade-Setup-*.exe"
         winget install -h PathofBuildingCommunity.PathofBuildingCommunity --accept-source-agreements --accept-package-agreements -e
 
     }
@@ -261,7 +225,7 @@ function InstallBasicKit {
     $env:PATH = "C:`\Users`\Kevin`\.local`\bin;$env:PATH"
     Update-Environment
     winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
-    winget install -h Microsoft.PowerToys --accept-source-agreements --accept-package-agreements -e --disable-interactivity
+    DownlaodInstallGithub "PowerToys" "microsoft/PowerToys" "PowerToysUserSetup-*-x64.exe"
     winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e
     winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e
     winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
@@ -596,7 +560,7 @@ venv
 "@
 
     # Ensure the directories exist
-    $pwshProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+    $pwshProfileDir = "$PsHome\profile.ps1"
     $psProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
 
     if (-not (Test-Path $pwshProfileDir)) {
