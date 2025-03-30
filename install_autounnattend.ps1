@@ -137,10 +137,23 @@ function InstallWinget {
 
     # Check if PowerShell was just installed
     if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
-        if (-not $InitialRun) {
+        Write-ColorOutput Green "PowerShell has been installed."
+        # Always attempt restart during InitialRun if PS was just installed
+        if ($InitialRun) {
+            Write-ColorOutput Green "Restarting script in new PowerShell 7 for Initial Run..."
+            # Use Start-Process to launch PS7, pass necessary parameters
+            # Ensure $PSCommandPath is valid in this context
+            $ArgList = "-NoExit", "-File", "`"$PSCommandPath`"", "-GitHubToken", "`"$GitHubToken`"" # Note: No -InitialRun on restart
+            Start-Process pwsh -ArgumentList $ArgList
+            Write-ColorOutput Yellow "Exiting current PowerShell session to allow PowerShell 7 to take over."
+            # Exit the current (PS5) script cleanly
+            exit 0 # Use exit code 0 to indicate intentional exit
+        }
+        else {
+            # Handle restarts for non-initial runs if needed (seems you already have logic for wt)
+            Write-ColorOutput Green "Restarting script in new PowerShell 7 via Windows Terminal..."
             Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`""
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
+            [System.Diagnostics.Process]::GetCurrentProcess().Kill() # Or use exit 0
         }
     }
 }
