@@ -222,7 +222,7 @@ function Gaming {
 function InstallBasicKit {
     winget install -h AutoHotkey.AutoHotkey --accept-source-agreements --accept-package-agreements -e
     powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-    $env:PATH = "C:`\Users`\Kevin`\.local`\bin;$env:PATH"
+    $env:PATH = "$env:USERPROFILE`\.local`\bin;$env:PATH"
     Update-Environment
     winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     DownlaodInstallGithub "PowerToys" "microsoft/PowerToys" "PowerToysUserSetup-*-x64.exe"
@@ -634,7 +634,7 @@ function NvidiaSettings {
             "capEnabled": false,
             "capSizePercent": 100,
             "currentDirectoryV2": "D:\\Recording\\RAW",
-            "tempDirectory": "C:\\Users\\Kevin\\AppData\\Local\\Temp\\",
+            "tempDirectory": "$env:USERPROFILE\\AppData\\Local\\Temp\\",
             "trackerUpdateState": "TrackerUpdateComplete"
         }
     }
