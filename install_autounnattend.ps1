@@ -13,6 +13,11 @@ param(
    [switch]$InitialRun = $false # PowerShell7 switch is redundant now
 )
 
+function Write-ColorOutput($ForegroundColor, $Message) {
+   # Simple wrapper for colored output
+   Write-Host $Message -ForegroundColor $ForegroundColor
+}
+
 # Determine if running in PowerShell 7+
 $IsPowerShell7 = $PSVersionTable.PSVersion.Major -ge 7
 Write-ColorOutput Cyan "Running in PowerShell Version: $($PSVersionTable.PSVersion.ToString()) (IsPS7: $IsPowerShell7)"
@@ -91,12 +96,6 @@ function Update-Environment {
    # Reload PATH into current session
    $env:Path = $env:Path
    Write-ColorOutput Cyan "Session PATH updated (best effort)."
-}
-
-
-function Write-ColorOutput($ForegroundColor, $Message) {
-   # Simple wrapper for colored output
-   Write-Host $Message -ForegroundColor $ForegroundColor
 }
 
 # Renamed function for clarity
