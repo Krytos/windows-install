@@ -1,7 +1,7 @@
 default-groups = ["dev"]
 dependency-groups.dev = []
 concurrent-downloads = 100
-link-mode = "symlink"
+link-mode = "hardlink"
 no-binary-package = ["pyinstaller"]
 
 [pip]

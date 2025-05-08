@@ -1,6 +1,12 @@
 # TODOs #
-# WSL activation and installing WSL
+# WSL activation and installing WSL and adding .bashrc
 # Selection Menu for what to install
+# Update profile.ps1
+# Edit Oh-My-Posh theme: blocks > segments > "type": "executiontime"; change "style": "roundrock" -> "style": "austin"
+# Edit Oh-My-Posh theme: blocks > segments > "type": "os"; change -> "template": " {{ if eq .UserName \"kali\"}}Kali at \uF316{{ else if  .WSL }}WSL at {{.Icon}}{{ else }}{{.Icon}}{{ end }} ",
+# Add ruff and uv config files: %APPDATA%\ruff\ruff.toml and %APPDATA%\uv\uv.toml
+# Add Catppuccin Themes to everything
+# Use this script for "Windows Files" theme install: `$host.UI | Add-Member -MemberType ScriptMethod -Name PromptForChoice -Value { $args[3] } -Force; . { iwr -UseBasicParsing https://github.com/catppuccin/windows-files/raw/main/install.ps1 } | iex`
 
 param(
     [string]$GitHubToken,
@@ -8,26 +14,15 @@ param(
     [switch]$InitialRun = $false
 )
 
-function Write-ColorOutput($ForegroundColor) {
-    $fc = $host.UI.RawUI.ForegroundColor
-    $host.UI.RawUI.ForegroundColor = $ForegroundColor
-    if ($args) {
-        Write-Output $args
-    }
-    else {
-        $input | Write-Output
-    }
-    $host.UI.RawUI.ForegroundColor = $fc
+# At the beginning of your script
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $PowerShell7 = $true
 }
 
-# Check if running in PowerShell 7
-$PowerShell7 = $PSVersionTable.PSVersion.Major -ge 7
-
-if ($InitialRun -and $PowerShell7) {
-    # Create a flag file to signal the batch file to restart
-    Write-ColorOutput Green "Initial run completed in PowerShell 7. Creating flag file..."
+if ($InitialRun -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+    # Create a flag file
     New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
-    # Exit to allow the batch file to handle the restart
+    # Exit this PowerShell session
     exit
 }
 
@@ -48,16 +43,33 @@ function InstallAllTheThings {
     else {
         Write-ColorOutput Green "Running in PowerShell 7, skipping Winget installation."
     }
-    # InstallDependencies
+    InstallDependencies
     QoLRegConfigurations
     RemoveWindowsFeatures
     InstallBasicKit
     InstallAdvanced
+    InstallMedia
     RemoveGameBar
     InstallDevTools
     AddRegistryEntries
+    NvidiaSettings
+    PoEStuff
     StartServices
     TakeOwnership
+
+    if (Test-Path "autostart.ahk") {
+        Start-Process "autostart.ahk"
+    }
+    else {
+        Write-ColorOutput Green "Downloading Autostart.ahk..."
+        Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/autostart.ahk" -Destination "autostart.ahk"
+        if (Test-Path "autostart.ahk") {
+            Start-Process "autostart.ahk"
+        }
+        else {
+            Write-ColorOutput Red "Failed to download autostart.ahk."
+        }
+    }
 }
 
 function Update-Environment {
@@ -72,7 +84,17 @@ function Update-Environment {
     }
 }
 
-
+function Write-ColorOutput($ForegroundColor) {
+    $fc = $host.UI.RawUI.ForegroundColor
+    $host.UI.RawUI.ForegroundColor = $ForegroundColor
+    if ($args) {
+        Write-Output $args
+    }
+    else {
+        $input | Write-Output
+    }
+    $host.UI.RawUI.ForegroundColor = $fc
+}
 
 function RemoveWindowsFeatures {
     # Disable Windows Media Player
@@ -94,6 +116,7 @@ function InstallWinget {
         Start-BitsTransfer -Source $latestWingetMsixBundleUri -Destination "./$latestWingetMsixBundle"
         Start-BitsTransfer -Source "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" -Destination Microsoft.VCLibs.x64.14.00.Desktop.appx
         Add-AppxPackage Microsoft.VCLibs.x64.14.00.Desktop.appx
+        Update-Environment
         Add-AppxPackage $latestWingetMsixBundle
         # Remove the installers:
         Remove-Item -Path $latestWingetMsixBundle
@@ -112,16 +135,23 @@ function InstallWinget {
         Update-Environment
         Install-PackageProvider -Name NuGet -Force
         Update-Environment
-        InstallNeededForScript
-        TerminalStuff
-        Update-Environment
-        # Create the flag file after installing PowerShell 7
-        Write-ColorOutput Green "PowerShell 7 has been installed. Creating flag file for restart..."
-        New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
-        exit
     }
     else {
+
         Write-ColorOutput Magenta "PowerShell is already installed."
+    }
+
+    InstallNeededForScript
+
+    TerminalStuff
+
+    # Check if PowerShell was just installed
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorOutput Green "PowerShell has been installed. Restarting script in new PowerShell 7..."
+        if (-not $InitialRun) {
+            Start-Process wt -ArgumentList "pwsh -NoExit -File `"$PSCommandPath`" -GitHubToken `"$GitHubToken`""
+            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
+        }
     }
 }
 
@@ -131,36 +161,118 @@ function InstallNeededForScript {
     winget install -h wget --accept-source-agreements --accept-package-agreements -e
 }
 
+
+function DownlaodInstallGithub($name, $repo, $filePattern) {
+
+    $downloadPath = Join-Path $env:TEMP "$($filePattern.Split("*")[0].TrimEnd("-")).exe"
+
+    try {
+        # Fetch the latest release information
+        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest"
+
+        # Find the asset URL for the Awakened-PoE-Trade-Setup-*.exe file
+        $assetUrl = $releaseInfo.assets | Where-Object { $_.name -like $filePattern } | Select-Object -ExpandProperty browser_download_url -First 1
+
+        if (-not $assetUrl) {
+            Write-Error "Could not find $filePattern in the latest release."
+            return
+        }
+
+        # Download the file
+        Write-ColorOutput Green "Downloading $name..."
+        Start-BitsTransfer -Source $assetUrl -Destination $downloadPath
+
+        # Check if the file was downloaded successfully
+        if (Test-Path $downloadPath) {
+            Write-ColorOutput Green "Download completed. Installing $name..."
+            Start-Process -FilePath $downloadPath -ArgumentList "/S" -Wait
+        }
+        else {
+            Write-Error "Failed to download $name."
+        }
+    }
+    catch {
+        Write-Error "An error occurred: $_"
+    }
+}
+
+function Gaming {
+
+    function wow {
+        winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
+        winget install -h WowUp.CF --accept-source-agreements --accept-package-agreements -e
+
+    }
+
+    function poe {
+        # Download and run PoeLurkerSetup
+        DownlaodInstallGithub "PoELurker" "C1rdec/Poe-Lurker" "PoeLurkerSetup*.exe"
+        DownlaodInstallGithub "AwakenedPoeTrade" "SnosMe/awakened-poe-trade" "Awakened-PoE-Trade-Setup-*.exe"
+        winget install -h PathofBuildingCommunity.PathofBuildingCommunity --accept-source-agreements --accept-package-agreements -e
+
+    }
+
+
+    winget install -h Valve.Steam --accept-source-agreements --accept-package-agreements -e
+    winget install -h TeamSpeakSystems.TeamSpeakClient.Beta --accept-source-agreements --accept-package-agreements -e
+
+}
+
 function InstallBasicKit {
+
     winget install -h AutoHotkey.AutoHotkey --accept-source-agreements --accept-package-agreements -e
     powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
     $env:PATH = "C:`\Users`\Kevin`\.local`\bin;$env:PATH"
     Update-Environment
     winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
-    winget install -h Microsoft.PowerToys --accept-source-agreements --accept-package-agreements -e --disable-interactivity
+    DownlaodInstallGithub "PowerToys" "microsoft/PowerToys" "PowerToysUserSetup-*-x64.exe"
+    winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e
+    winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e
+    winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e
-    winget install -h Flow-Launcher.Flow-Launcher --accept-source-agreements --accept-package-agreements -e
+    winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
+    winget install -h Xanashi.Icaros --accept-source-agreements --accept-package-agreements -e --source winget # Icaros Shell Extension for thumbnails
     winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force # PotPlayer
+    InstallJdownloader
     winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e
     winget install -h Nvidia.Broadcast --accept-source-agreements --accept-package-agreements -e
+
     winget install -h Telegram.TelegramDesktop --accept-source-agreements --accept-package-agreements -e
     winget install -h 9N8G7TSCL18R --accept-source-agreements --accept-package-agreements -e # NanaZip
     winget install -h Google.QuickShare --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e
     winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e # Spotify
+    winget install --id lsd-rs.lsd
+
+
+
+}
+
+function InstallJdownloader {
+    winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/jdownloader.json" -Destination "C:\Program Files\JDownloader\cfg\org.jdownloader.controlling.filter.LinkFilterSettings.filterlist.json"
 }
 
 function InstallAdvanced {
+    winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e
     winget install -h Microsoft.Sysinternals.ProcessExplorer --accept-source-agreements --accept-package-agreements -e
     winget install -h StefanSundin.Superf4 --accept-source-agreements --accept-package-agreements -e # Better Alt+F4 with Ctrl+Alt+F4
     winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e # One Commander
     winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9NK1HLWHNP8S --accept-source-agreements --accept-package-agreements -e # Fluent Launcher
+
     winget install Obsidian.Obsidian
+    winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
     winget install -h Bruno.Bruno --accept-source-agreements --accept-package-agreements -e
+    winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e
     winget install -h WinSCP.WinSCP --accept-source-agreements --accept-package-agreements -e
     winget install -h voidtools.Everything --accept-source-agreements --accept-package-agreements -e
+    winget install -h Nvidia.PhysX --accept-source-agreements --accept-package-agreements -e
+
+    winget install -h UnifiedIntents.UnifiedRemote --accept-source-agreements --accept-package-agreements -e
+    winget install -h HandBrake.HandBrake --accept-source-agreements --accept-package-agreements -e
 }
 
 
@@ -224,6 +336,10 @@ function AddRegistryEntries {
     Set-ItemProperty -Name "Icon" -Value "`"C:\Program Files\WizTree\WizTree64.exe`",0"
 }
 
+function InstallMedia {
+    winget install -h Jellyfin.JellyfinMediaPlayer --accept-source-agreements --accept-package-agreements -e
+    winget install -h XBMCFoundation.Kodi --accept-source-agreements --accept-package-agreements -e
+}
 
 function InstallDependencies {
     winget install -h Microsoft.DotNet.DesktopRuntime.6 --accept-source-agreements --accept-package-agreements -e
@@ -379,7 +495,7 @@ function InstallPythonAndPackages {
         uv python install $version
     }
 
-    $pythonTools = @("hashcat", "ipython", "ruff")
+    $pythonTools = @("hashcat", "ipython", "nuitka", "ruff")
     foreach ($tool in $pythonTools) {
         uv tool install $tool
     }
@@ -474,7 +590,7 @@ venv
 "@
 
     # Ensure the directories exist
-    $pwshProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+    $pwshProfileDir = "$PsHome\profile.ps1"
     $psProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
 
     if (-not (Test-Path $pwshProfileDir)) {
@@ -494,7 +610,6 @@ venv
     Write-Host "PowerShell profile: $psProfileDir\Microsoft.PowerShell_profile.ps1" -ForegroundColor Cyan
     Update-Environment
 }
-
 
 
 
@@ -561,6 +676,100 @@ function SetupGit {
     # GitHub CLI authentication
     LoginGitHubCLI -Token $GitHubToken
 }
+
+function NvidiaSettings {
+    # Settings for Nvidia Overlay
+    gallery_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\GallerySettings.json"
+    share_settings_path = "$env:USERPROFILE\AppData\Local\NVIDIA Corporation\NVIDIA Overlay\ShareSettings.json"
+    if (-not (Test-Path $gallery_settings_path)) {
+        New-Item -Path $gallery_settings_path -ItemType File -Force
+    }
+    if (-not (Test-Path $share_settings_path)) {
+        New-Item -Path $share_settings_path -ItemType File -Force
+    }
+    $gallery_settings = @"
+    {
+        "settings": {
+            "capEnabled": false,
+            "capSizePercent": 100,
+            "currentDirectoryV2": "D:\\Recording\\RAW",
+            "tempDirectory": "C:\\Users\\Kevin\\AppData\\Local\\Temp\\",
+            "trackerUpdateState": "TrackerUpdateComplete"
+        }
+    }
+"@
+    $share_settings = @"
+    {
+	"settings": {
+		"shortcuts": {
+			"OpenIGO": [
+				18,
+				17,
+				78
+			],
+			"Screenshot": [
+				0
+			],
+			"PMOCOverlay": [
+				18,
+				121
+			],
+			"OpenFreestyle": [
+				0
+			],
+			"RecordToggle": [
+				17,
+				117
+			],
+			"OpenAnsel": [
+				0
+			],
+			"DVRSave": [
+				18,
+				117
+			],
+			"DVRToggle": [
+				17,
+				18,
+				117
+			],
+			"MicToggle": [
+				0
+			],
+			"PTT": [
+				0
+			],
+			"FreeStyleToggleStyle1": [],
+			"FreeStyleToggleStyle2": [],
+			"FreeStyleToggleStyle3": [],
+			"PMOCOverlayVisibility": [
+				0
+			],
+			"PMOCOverlayCycle": [
+				17,
+				121
+			],
+			"PMOCResetAverageMetrics": [],
+			"PMOCLoggingToggle": []
+		},
+		"globalhighlights": {
+			"enabled": true
+		},
+		"video": {
+			"irEnabled": false,
+			"irBufferLength": 180
+		},
+		"micmode": {
+			"mode": "on"
+		}
+	}
+}
+"@
+    Set-Content -Path $gallery_settings_path -Value $gallery_settings
+    Set-Content -Path $share_settings_path -Value $share_settings
+    Write-Host "Gallery and Share settings have been created successfully." -ForegroundColor Green
+}
+
 
 # Call the master function
 
