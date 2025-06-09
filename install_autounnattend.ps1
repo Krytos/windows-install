@@ -223,17 +223,26 @@ function InstallWingetAndRestartIfInitialRun {
         if (Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue) {
             Write-ColorOutput Green "Winget found on system for PowerShell 7 installation."
             $wingetInstalled = $true
-        } else {
+        }
+        else {
             Write-ColorOutput Yellow "Winget not found on system."
             $wingetInstalled = $false
         }
     }    # --- Install PS7 (only if Winget was found or installed) ---
     Write-ColorOutput Cyan "Checking PowerShell 7 installation status..."
     if ($wingetInstalled) {
-        Write-ColorOutput Green "Winget available - proceeding with PowerShell 7 check..."
-        if (-not (Get-Command pwsh -EA SilentlyContinue)) {
+        Write-ColorOutput Green "Winget available - proceeding with PowerShell 7 check..."        if (-not (Get-Command pwsh -EA SilentlyContinue)) {
             Write-ColorOutput Green "PS7 not found. Installing via Winget...";
-            try { winget install -h Microsoft.PowerShell --accept-source-agreements --accept-package-agreements -e --EA Stop; $psInstallSuccess = $true; Write-ColorOutput Green "PS7 installed." }
+            try {
+                & winget install -h Microsoft.PowerShell --accept-source-agreements --accept-package-agreements -e
+                if ($LASTEXITCODE -eq 0) {
+                    $psInstallSuccess = $true
+                    Write-ColorOutput Green "PS7 installed successfully."
+                }
+                else {
+                    throw "Winget install failed with exit code: $LASTEXITCODE"
+                }
+            }
             catch { Write-ColorOutput Red "FATAL: 'winget install PS7' failed: $($_.Exception.Message)"; exit 1 }
             # Install NuGet Provider
             $pwshExe = Get-Command pwsh -EA SilentlyContinue; if ($pwshExe) { Start-Process -FilePath $pwshExe.Source -Args "-NoP -Command Install-PackageProvider -Name NuGet -Force -Scope CU" -Wait } else { Write-ColorOutput Red "pwsh.exe not found after install." }
