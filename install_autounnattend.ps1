@@ -304,8 +304,8 @@ function InstallNeededForScript {
     Write-ColorOutput Magenta "--- Installing Script Prerequisites (jq, wget) ---"
     try {
         Set-PSRepository PSGallery -InstallationPolicy Trusted -ErrorAction Stop
-        winget install -h jqlang.jq --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-        winget install -h GerbenBosscher.Wget --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop # Corrected ID likely
+        winget install -h jqlang.jq --accept-source-agreements --accept-package-agreements -e
+        winget install -h GerbenBosscher.Wget --accept-source-agreements --accept-package-agreements -e # Corrected ID likely
     }
     catch {
         Write-ColorOutput Red "Failed to install script prerequisites: $($_.Exception.Message)"
@@ -360,27 +360,27 @@ function Gaming {
     # Consider moving nested functions out for readability
     function wow {
         Write-ColorOutput Cyan "Installing WoW related apps..."
-        winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\" --ErrorAction Stop
-        winget install -h WowUp.CF --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+        winget install -h Blizzard.BattleNet --accept-source-agreements --accept-package-agreements -e -l "C:\Program Files\Battle.net\"
+        winget install -h WowUp.CF --accept-source-agreements --accept-package-agreements -e
     }
 
     function poe {
         Write-ColorOutput Cyan "Installing Path of Exile related apps..."
         DownlaodInstallGithub "PoELurker" "C1rdec/Poe-Lurker" "PoeLurkerSetup*.exe"
         DownlaodInstallGithub "AwakenedPoeTrade" "SnosMe/awakened-poe-trade" "Awakened-PoE-Trade-Setup-*.exe"
-        winget install -h PathofBuildingCommunity.PathofBuildingCommunity --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+        winget install -h PathofBuildingCommunity.PathofBuildingCommunity --accept-source-agreements --accept-package-agreements -e
     }
 
     wow # Call nested function
     poe # Call nested function
 
-    winget install -h Valve.Steam --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h TeamSpeakSystems.TeamSpeakClient.Beta --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h Valve.Steam --accept-source-agreements --accept-package-agreements -e
+    winget install -h TeamSpeakSystems.TeamSpeakClient.Beta --accept-source-agreements --accept-package-agreements -e
 }
 
 function InstallBasicKit {
     Write-ColorOutput Magenta "--- Installing Basic Kit ---"
-    winget install -h AutoHotkey.AutoHotkey --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h AutoHotkey.AutoHotkey --accept-source-agreements --accept-package-agreements -e
     try {
         Write-ColorOutput Cyan "Installing uv..."
         powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 | iex" # Ensure Bypass
@@ -398,33 +398,33 @@ function InstallBasicKit {
         Write-ColorOutput Yellow "uv path ($uvPath) not found after install attempt."
     }
 
-    winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity --ErrorAction Stop
+    winget install Microsoft.VisualStudioCode --override "/verysilent /suppressmsgboxes /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath'" --accept-source-agreements --accept-package-agreements -e --disable-interactivity
     DownlaodInstallGithub "PowerToys" "microsoft/PowerToys" "PowerToysUserSetup-*-x64.exe"
 
-    winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity --ErrorAction Stop
-    winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Xanashi.Icaros --accept-source-agreements --accept-package-agreements -e --source winget --ErrorAction Stop
-    winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force --ErrorAction Stop
+    winget install -h Audacity.Audacity --accept-source-agreements --accept-package-agreements -e
+    winget install -h dotPDN.PaintDotNet --accept-source-agreements --accept-package-agreements -e
+    winget install -h Discord.Discord --accept-source-agreements --accept-package-agreements -e --disable-interactivity
+    winget install -h Foxit.FoxitReader --accept-source-agreements --accept-package-agreements -e
+    winget install -h MediaArea.MediaInfo.GUI --accept-source-agreements --accept-package-agreements -e
+    winget install -h Xanashi.Icaros --accept-source-agreements --accept-package-agreements -e --source winget
+    winget install -h XP8BSBGQW2DKS0 --accept-source-agreements --accept-package-agreements -e --force
     InstallJdownloader
-    winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Nvidia.Broadcast --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h RevoUninstaller.RevoUninstaller --accept-source-agreements --accept-package-agreements -e
+    winget install -h Nvidia.Broadcast --accept-source-agreements --accept-package-agreements -e
 
-    winget install -h Telegram.TelegramDesktop --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h 9N8G7TSCL18R --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Google.QuickShare --accept-source-agreements --accept-package-agreements -e --disable-interactivity --ErrorAction Stop
-    winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install --id lsd-rs.lsd --accept-package-agreements --accept-source-agreements -e --ErrorAction Stop
+    winget install -h Telegram.TelegramDesktop --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9N8G7TSCL18R --accept-source-agreements --accept-package-agreements -e
+    winget install -h Google.QuickShare --accept-source-agreements --accept-package-agreements -e --disable-interactivity
+    winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e
+    winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e
+    winget install --id lsd-rs.lsd --accept-package-agreements --accept-source-agreements -e
 }
 
 function InstallJdownloader {
     Write-ColorOutput Cyan "Installing JDownloader and configuration..."
     try {
-        winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+        winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
         $jdownloaderConfigDest = "C:\Program Files\JDownloader\cfg\org.jdownloader.controlling.filter.LinkFilterSettings.filterlist.json" # Assuming default install path
         if (Test-Path (Split-Path $jdownloaderConfigDest)) {
             Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/jdownloader.json" -Destination $jdownloaderConfigDest -ErrorAction Stop
@@ -441,30 +441,30 @@ function InstallJdownloader {
 
 function InstallAdvanced {
     Write-ColorOutput Magenta "--- Installing Advanced Kit ---"
-    winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop # Can be problematic
-    winget install -h Microsoft.Sysinternals.ProcessExplorer --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h StefanSundin.Superf4 --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h 9NK1HLWHNP8S --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h Logitech.GHUB --accept-source-agreements --accept-package-agreements -e # Can be problematic
+    winget install -h Microsoft.Sysinternals.ProcessExplorer --accept-source-agreements --accept-package-agreements -e
+    winget install -h StefanSundin.Superf4 --accept-source-agreements --accept-package-agreements -e
+    winget install -h ArcadeRenegade.SidebarDiagnostics --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9NBLGGH4S79B --accept-source-agreements --accept-package-agreements -e
+    winget install -h AntibodySoftware.WizTree --accept-source-agreements --accept-package-agreements -e
+    winget install -h 9NK1HLWHNP8S --accept-source-agreements --accept-package-agreements -e
 
-    winget install Obsidian.Obsidian --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Bruno.Bruno --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h WinSCP.WinSCP --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h voidtools.Everything --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h Nvidia.PhysX --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install Obsidian.Obsidian --accept-source-agreements --accept-package-agreements -e
+    winget install -h Intel.PresentMon --accept-source-agreements --accept-package-agreements -e
+    winget install -h Bruno.Bruno --accept-source-agreements --accept-package-agreements -e
+    winget install -h qBittorrent.qBittorrent --accept-source-agreements --accept-package-agreements -e
+    winget install -h WinSCP.WinSCP --accept-source-agreements --accept-package-agreements -e
+    winget install -h voidtools.Everything --accept-source-agreements --accept-package-agreements -e
+    winget install -h Nvidia.PhysX --accept-source-agreements --accept-package-agreements -e
 
-    winget install -h UnifiedIntents.UnifiedRemote --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h HandBrake.HandBrake --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h UnifiedIntents.UnifiedRemote --accept-source-agreements --accept-package-agreements -e
+    winget install -h HandBrake.HandBrake --accept-source-agreements --accept-package-agreements -e
 }
 
 function InstallMedia {
     Write-ColorOutput Magenta "--- Installing Media Apps ---"
-    winget install -h Jellyfin.JellyfinMediaPlayer --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h XBMCFoundation.Kodi --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h Jellyfin.JellyfinMediaPlayer --accept-source-agreements --accept-package-agreements -e
+    winget install -h XBMCFoundation.Kodi --accept-source-agreements --accept-package-agreements -e
 }
 
 function InstallDependencies {
@@ -478,11 +478,11 @@ function InstallDependencies {
 
 function InstallDevTools {
     Write-ColorOutput Magenta "--- Installing Developer Tools ---"
-    winget install -h Chocolatey.Chocolatey --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-    winget install -h JetBrains.Toolbox --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install -h Chocolatey.Chocolatey --accept-source-agreements --accept-package-agreements -e
+    winget install -h JetBrains.Toolbox --accept-source-agreements --accept-package-agreements -e
     InstallPythonAndPackages # Contains winget installs
     SetupGit # Contains winget installs
-    winget install Nvidia.CUDA --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+    winget install Nvidia.CUDA --accept-source-agreements --accept-package-agreements -e
 }
 
 function InstallPythonAndPackages {
@@ -550,7 +550,7 @@ regenerationSharedArchive=1
 "@
     try {
         Set-Content -Path $tempConfigPath -Value $configContent -Encoding ASCII -Force -ErrorAction Stop
-        $installCommand = "winget install -e --id JetBrains.PyCharm.Professional --override `"/S /CONFIG=$tempConfigPath /D=$InstallDir`" --accept-source-agreements --accept-package-agreements --ErrorAction Stop"
+        $installCommand = "winget install -e --id JetBrains.PyCharm.Professional --override `"/S /CONFIG=$tempConfigPath /D=$InstallDir`" --accept-source-agreements --accept-package-agreements"
         Write-ColorOutput Cyan "Running: $installCommand"
         Invoke-Expression $installCommand
         Write-ColorOutput Green "PyCharm installation command issued."
@@ -708,20 +708,20 @@ function TerminalStuff {
     InstallNeededForScript # Install jq, wget first
 
     try {
-        winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-        winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
-        winget install -h 9N0DX20HK701 --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop # Windows Terminal
+        winget install -h Git.Git --accept-source-agreements --accept-package-agreements -e
+        winget install -h GitHub.cli --accept-source-agreements --accept-package-agreements -e
+        winget install -h 9N0DX20HK701 --accept-source-agreements --accept-package-agreements -e # Windows Terminal
 
         Set-WindowsTerminalAsDefault # Call internal function
 
-        winget install -h JanDeDobbeleer.OhMyPosh --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+        winget install -h JanDeDobbeleer.OhMyPosh --accept-source-agreements --accept-package-agreements -e
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -Force -ErrorAction Stop }
         Install-Module -Name Terminal-Icons -Repository PSGallery -Force -ErrorAction Stop
         Update-Environment
         oh-my-posh font install FiraCode # May require user interaction
 
         # Install Clink
-        winget install -h ChrisLundquist.Clink --accept-source-agreements --accept-package-agreements -e --ErrorAction Stop
+        winget install -h ChrisLundquist.Clink --accept-source-agreements --accept-package-agreements -e
         $clinkPath = "C:\Program Files (x86)\clink" # Default path
         if (Test-Path $clinkPath) {
             Write-ColorOutput Cyan "Adding Clink path to session PATH..."
