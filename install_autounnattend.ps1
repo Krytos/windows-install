@@ -19,12 +19,24 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
     $PowerShell7 = $true
 }
 
-if ($InitialRun -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
-    # Create a flag file
-    New-Item -Path "$env:TEMP\restart_pwsh.flag" -ItemType File -Force
-    # Exit this PowerShell session
+Write-Host "Script starting - PowerShell Version: $($PSVersionTable.PSVersion.ToString())" -ForegroundColor Cyan
+Write-Host "Parameters - InitialRun: $InitialRun, PowerShell7: $PowerShell7, GitHubToken: $($GitHubToken -ne $null)" -ForegroundColor Cyan
+
+# If this is the initial run and we're not already in PowerShell 7, restart in PowerShell 7
+if ($InitialRun -and -not $PowerShell7 -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+    Write-Host "PowerShell 7 detected but not currently running. Restarting script in PowerShell 7..." -ForegroundColor Yellow
+
+    # Build the restart command with all original parameters
+    $restartArgs = @("-File", $MyInvocation.MyCommand.Path)
+    if ($GitHubToken) { $restartArgs += "-GitHubToken", $GitHubToken }
+    $restartArgs += "-PowerShell7", "-InitialRun"
+
+    # Start the script in PowerShell 7
+    Start-Process -FilePath "pwsh.exe" -ArgumentList $restartArgs -Wait -NoNewWindow
     exit
 }
+
+Write-Host "Continuing with script execution..." -ForegroundColor Green
 
 # Rest of your script goes here
 # Change to user profile directory
