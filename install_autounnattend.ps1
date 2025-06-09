@@ -41,6 +41,19 @@ Write-Host "Continuing with script execution..." -ForegroundColor Green
 # Rest of your script goes here
 # Change to user profile directory
 Set-Location $env:USERPROFILE
+
+function Write-ColorOutput($ForegroundColor) {
+    $fc = $host.UI.RawUI.ForegroundColor
+    $host.UI.RawUI.ForegroundColor = $ForegroundColor
+    if ($args) {
+        Write-Output $args
+    }
+    else {
+        $input | Write-Output
+    }
+    $host.UI.RawUI.ForegroundColor = $fc
+}
+
 Write-ColorOutput Cyan "Current Location: $(Get-Location)"
 
 
