@@ -37,6 +37,7 @@ if ($InitialRun -and -not $PowerShell7 -and (Get-Command pwsh -ErrorAction Silen
 }
 
 Write-Host "Continuing with script execution..." -ForegroundColor Green
+Write-Host "About to set location to user profile: $env:USERPROFILE" -ForegroundColor Cyan
 
 # Rest of your script goes here
 # Change to user profile directory
@@ -67,7 +68,7 @@ if (-not (Get-PSDrive -Name HKCR -ErrorAction SilentlyContinue)) {
 #region Core Functions
 function InstallAllTheThings {
     Write-ColorOutput Magenta "--- Starting Main Installation Sequence ---"
-    if (-not $IsPowerShell7) {
+    if (-not $PowerShell7) {
         # This block will only run if the script starts in PS5.1
         # It will attempt to install Winget and PS7, then restart.
         InstallWingetAndRestartIfInitialRun
@@ -238,10 +239,8 @@ function InstallWingetAndRestartIfInitialRun {
         Write-ColorOutput Red "FATAL: Cannot install PowerShell 7 without Winget. Exiting."
         exit 1
     }
-
-
     # --- Restart Logic ---
-    $RestartNeeded = $InitialRun -and $psInstallSuccess -and (-not $IsPowerShell7)
+    $RestartNeeded = $InitialRun -and $psInstallSuccess -and (-not $PowerShell7)
     if ($RestartNeeded) {
         Write-ColorOutput Yellow "PowerShell 7 was just installed during Initial Run. Restarting script..."
         $CurrentScriptPath = if ($PSCommandPath) { $PSCommandPath } elseif ($MyInvocation -and $MyInvocation.MyCommand -and $MyInvocation.MyCommand.Path) { $MyInvocation.MyCommand.Path } else { Write-ColorOutput Red "FATAL: Cannot determine script path."; exit 1 }
@@ -905,6 +904,8 @@ function NvidiaSettings {
 #endregion
 
 # --- Main Script Execution ---
+Write-Host "=== REACHED MAIN EXECUTION BLOCK ===" -ForegroundColor Magenta
+Write-Host "About to call InstallAllTheThings function..." -ForegroundColor Magenta
 try {
     InstallAllTheThings -ErrorAction Stop # Call the master function, stop script on unhandled error within it
     Write-ColorOutput Green "##############################################"
