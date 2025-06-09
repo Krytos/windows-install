@@ -213,17 +213,24 @@ function InstallWingetAndRestartIfInitialRun {
                 exit 1
             }
             finally { Remove-Item -Path $wingetBundlePath -EA SilentlyContinue }
-        }
-
-        # Attempt PATH update regardless of whether Winget was *just* installed or already present
+        }        # Attempt PATH update regardless of whether Winget was *just* installed or already present
         $winAppsPath = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"; if (Test-Path $winAppsPath) { Write-ColorOutput Yellow "Adding/Verifying WinApps in session PATH..."; $env:Path = "$($env:Path.TrimEnd(';'));$winAppsPath" -replace ';+', ';'; Start-Sleep -Seconds 3 }
 
-
     }
-    else { Write-ColorOutput Magenta "Winget install skipped (Not Initial Run)."; return }
-
-    # --- Install PS7 (only if Winget was found or installed) ---
+    else {
+        Write-ColorOutput Magenta "Winget install skipped (Not Initial Run)."
+        # Still need to check if Winget exists for PowerShell 7 installation
+        if (Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue) {
+            Write-ColorOutput Green "Winget found on system for PowerShell 7 installation."
+            $wingetInstalled = $true
+        } else {
+            Write-ColorOutput Yellow "Winget not found on system."
+            $wingetInstalled = $false
+        }
+    }    # --- Install PS7 (only if Winget was found or installed) ---
+    Write-ColorOutput Cyan "Checking PowerShell 7 installation status..."
     if ($wingetInstalled) {
+        Write-ColorOutput Green "Winget available - proceeding with PowerShell 7 check..."
         if (-not (Get-Command pwsh -EA SilentlyContinue)) {
             Write-ColorOutput Green "PS7 not found. Installing via Winget...";
             try { winget install -h Microsoft.PowerShell --accept-source-agreements --accept-package-agreements -e --EA Stop; $psInstallSuccess = $true; Write-ColorOutput Green "PS7 installed." }
