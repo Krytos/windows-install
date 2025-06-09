@@ -789,31 +789,23 @@ function QoLRegConfigurations {
 
 function PowerShellProfileSettings {
     Write-ColorOutput Magenta "--- Configuring PowerShell Profiles (All Users, All Hosts) ---"
-    # Requires Administrator privileges
-
-    # Define the common profile content
+    # Requires Administrator privileges    # Define the common profile content
     $commonProfileContent = @"
 # Common settings for PowerShell Profile (All Users, All Hosts)
 
+# Environment Variables
+`$env:VIRTUAL_ENV_DISABLE_PROMPT = 1
+`$env:POSH_GIT_ENABLED = `$true
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+
 # Oh My Posh Initialization
-# Check if the command exists before trying to run init
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
-    # Use a built-in theme or ensure the custom path is correct and accessible system-wide
-    # Using 'jandedobbeleer' as a fallback; replace with your 'night-owl' if $env:POSH_THEMES_PATH is set system-wide
-    # or provide the full path to night-owl.omp.json if needed.
-    # Consider potential issues if POSH_THEMES_PATH isn't defined for all users.
-    `$themePath = Join-Path `$env:POSH_THEMES_PATH "jandedobbeleer.omp.json" # Default theme path
-    if (Test-Path `$themePath) {
-        oh-my-posh init pwsh --config "`$themePath" | Invoke-Expression
-    } else {
-        Write-Warning "Oh My Posh theme not found at default path: `$themePath. Using default prompt."
-    }
+    oh-my-posh init pwsh --config "https://raw.githubusercontent.com/Krytos/windows-install/refs/heads/main/config/krytos.omp.json" | Invoke-Expression
 } else {
     Write-Warning "oh-my-posh command not found. Skipping Posh initialization."
 }
 
 # Terminal Icons Module Import
-# Check if the module exists before importing
 if (Get-Module -ListAvailable -Name Terminal-Icons) {
     Import-Module -Name Terminal-Icons
 } else {
@@ -821,19 +813,116 @@ if (Get-Module -ListAvailable -Name Terminal-Icons) {
 }
 
 # Aliases
-# Set aliases carefully in AllUsers profiles to avoid conflicts
-Set-Alias denv Deactivate -ErrorAction SilentlyContinue -Scope Global # Use Global scope
+Set-Alias denv Deactivate -ErrorAction SilentlyContinue
 
 # Functions
-# Define functions within the profile scope
 function mklink (`$target, `$link) {
-    # Ensure the command runs with appropriate context if needed, though New-Item is usually fine
-    New-Item -Path `$link -ItemType SymbolicLink -Value `$target -ErrorAction Stop
+    New-Item -Path `$link -ItemType SymbolicLink -Value `$target
 }
 
-# Auto-activate venv (optional, consider performance impact on shell startup for all users)
-# function Activate-Venv { ... } # Keep function definition from previous version if desired
-# Activate-Venv # Call it if you want it to run for every user on every shell start
+function venv {
+    `$venvDirs = Get-ChildItem -Directory -Path . | Where-Object { `$_.Name -match '^\.?venv' }
+    foreach (`$dir in `$venvDirs) {
+        `$activatePath = Join-Path `$dir.Name "Scripts\Activate.ps1"
+        if (Test-Path `$activatePath) {
+            & `$activatePath
+            Write-Host "Activated virtual environment in `$(`$dir.FullName)" -ForegroundColor Green
+            return
+        }
+    }
+}
+
+function gitclone {
+    [CmdletBinding(SupportsShouldProcess = `$true)]
+    [OutputType([void])]
+    param(
+        [Parameter(Mandatory = `$true, Position = 0, HelpMessage = "The URL of the Git repository to clone.")]
+        [string]`$RepositoryUrl,
+        [Parameter(Mandatory = `$false, Position = 1, HelpMessage = "Optional: The name or full path for the target directory.")]
+        [string]`$TargetDirectoryName
+    )
+
+    `$ErrorActionPreferenceBackup = `$ErrorActionPreference
+    `$ErrorActionPreference = 'Stop'
+
+    try {
+        `$defaultRepoName = (`$RepositoryUrl.Split('/')[-1] -replace '\.git`$', '')
+        `$actualTargetNameOrPath = ""
+        `$finalPathToCd = ""
+
+        if (`$PSBoundParameters.ContainsKey('TargetDirectoryName')) {
+            `$actualTargetNameOrPath = `$TargetDirectoryName
+            if ([System.IO.Path]::IsPathRooted(`$TargetDirectoryName)) {
+                `$finalPathToCd = `$TargetDirectoryName
+            } else {
+                `$finalPathToCd = Join-Path -Path (Get-Location).Path -ChildPath `$TargetDirectoryName
+            }
+        } else {
+            `$finalPathToCd = Join-Path -Path (Get-Location).Path -ChildPath `$defaultRepoName
+        }
+
+        if (Test-Path -Path `$finalPathToCd -PathType Container) {
+            Write-Warning "Target directory '`$finalPathToCd' already exists. Skipping clone and attempting to CD."
+        } else {
+            `$gitArgs = @("clone", `$RepositoryUrl)
+            if (`$PSBoundParameters.ContainsKey('TargetDirectoryName')) {
+                `$gitArgs += `$actualTargetNameOrPath
+            }
+            Write-Host "Attempting to clone '`$RepositoryUrl' into '`$(`$finalPathToCd)'..."
+            if (`$PSCmdlet.ShouldProcess(`$RepositoryUrl, "Clone repository")) {
+                & git @gitArgs
+                Write-Host "Successfully cloned."
+            }
+        }
+
+        if (Test-Path -Path `$finalPathToCd -PathType Container) {
+            Write-Host "Changing directory to '`$finalPathToCd'..."
+            if (`$PSCmdlet.ShouldProcess(`$finalPathToCd, "Set Location (cd)")) {
+                Set-Location -Path `$finalPathToCd
+                Write-Host "Current directory: `$(Get-Location)"
+            }
+        } else {
+            throw "Cloned directory '`$finalPathToCd' not found. Cannot change directory."
+        }
+    } catch {
+        Write-Error "An error occurred: `$(`$_.Exception.Message)"
+    } finally {
+        `$ErrorActionPreference = `$ErrorActionPreferenceBackup
+    }
+}
+
+# Auto-activate venv on shell startup
+venv
+
+# Terminal prompt enhancements for Windows Terminal
+`$Global:__OriginalPrompt = `$function:Prompt
+
+function Global:__Terminal-Get-LastExitCode {
+    if (`$? -eq `$True) { return 0 }
+    `$LastHistoryEntry = `$(Get-History -Count 1)
+    `$IsPowerShellError = `$Error[0].InvocationInfo.HistoryId -eq `$LastHistoryEntry.Id
+    if (`$IsPowerShellError) { return -1 }
+    return `$LastExitCode
+}
+
+function prompt {
+    `$gle = `$(__Terminal-Get-LastExitCode);
+    `$LastHistoryEntry = `$(Get-History -Count 1)
+    if (`$Global:__LastHistoryId -ne -1) {
+        if (`$LastHistoryEntry.Id -eq `$Global:__LastHistoryId) {
+            `$out += "`e]133;D`a"
+        } else {
+            `$out += "`e]133;D;`$gle`a"
+        }
+    }
+    `$loc = `$(`$executionContext.SessionState.Path.CurrentLocation);
+    `$out += "`e]133;A`$([char]07)";
+    `$out += "`e]9;9;`"`$loc`"`$([char]07)";
+    `$out += `$Global:__OriginalPrompt.Invoke();
+    `$out += "`e]133;B`$([char]07)";
+    `$Global:__LastHistoryId = `$LastHistoryEntry.Id
+    return `$out
+}
 
 "@
 
