@@ -21,6 +21,11 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 
 Write-Host "Script starting - PowerShell Version: $($PSVersionTable.PSVersion.ToString())" -ForegroundColor Cyan
 Write-Host "Parameters - InitialRun: $InitialRun, PowerShell7: $PowerShell7, GitHubToken: $($GitHubToken -ne $null)" -ForegroundColor Cyan
+Write-Host "Invocation context - InvocationName: '$($MyInvocation.InvocationName)', Line: '$($MyInvocation.Line)'" -ForegroundColor Cyan
+
+# Check if we're being dot-sourced
+$IsDotSourced = $MyInvocation.InvocationName -eq '.' -or $MyInvocation.Line -match '^\s*\.\s+'
+Write-Host "Dot-sourced execution detected: $IsDotSourced" -ForegroundColor Cyan
 
 # If this is the initial run and we're not already in PowerShell 7, restart in PowerShell 7
 if ($InitialRun -and -not $PowerShell7 -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
@@ -230,8 +235,11 @@ function InstallWingetAndRestartIfInitialRun {
         }
     }    # --- Install PS7 (only if Winget was found or installed) ---
     Write-ColorOutput Cyan "Checking PowerShell 7 installation status..."
+
     if ($wingetInstalled) {
-        Write-ColorOutput Green "Winget available - proceeding with PowerShell 7 check..."        if (-not (Get-Command pwsh -EA SilentlyContinue)) {
+        Write-ColorOutput Green "Winget available - proceeding with PowerShell 7 check..."
+
+        if (-not (Get-Command pwsh -EA SilentlyContinue)) {
             Write-ColorOutput Green "PS7 not found. Installing via Winget...";
             try {
                 & winget install -h Microsoft.PowerShell --accept-source-agreements --accept-package-agreements -e
@@ -252,18 +260,37 @@ function InstallWingetAndRestartIfInitialRun {
     else {
         Write-ColorOutput Yellow "Winget was not found or installed. Skipping PS7 installation via Winget."
         # Cannot proceed reliably without PS7 in this script's design
-        Write-ColorOutput Red "FATAL: Cannot install PowerShell 7 without Winget. Exiting."
-        exit 1
+        Write-ColorOutput Red "FATAL: Cannot install PowerShell 7 without Winget. Exiting."        exit 1
     }
+
     # --- Restart Logic ---
     $RestartNeeded = $InitialRun -and $psInstallSuccess -and (-not $PowerShell7)
     if ($RestartNeeded) {
         Write-ColorOutput Yellow "PowerShell 7 was just installed during Initial Run. Restarting script..."
         $CurrentScriptPath = if ($PSCommandPath) { $PSCommandPath } elseif ($MyInvocation -and $MyInvocation.MyCommand -and $MyInvocation.MyCommand.Path) { $MyInvocation.MyCommand.Path } else { Write-ColorOutput Red "FATAL: Cannot determine script path."; exit 1 }
-        $ArgList = "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$CurrentScriptPath`"", "-GitHubToken", "`"$GitHubToken`"" # NO -InitialRun
-        Write-ColorOutput Cyan "Starting: pwsh $ArgList"
-        try { Start-Process pwsh -ArgumentList $ArgList -ErrorAction Stop; Write-ColorOutput Green "New PS7 process started. Exiting current PS5.1 session."; exit 0 }
-        catch { Write-ColorOutput Red "FATAL: Failed to start new PS7 process: $($_.Exception.Message)"; exit 1 }
+
+        # Check if we're being dot-sourced (common in autounattend scenarios)
+        $IsDotSourced = $MyInvocation.InvocationName -eq '.' -or $MyInvocation.Line -match '^\s*\.\s+'
+
+        if ($IsDotSourced) {
+            Write-ColorOutput Cyan "Detected dot-sourcing context. Using inline restart approach..."
+            # Instead of Start-Process + exit, we'll invoke PowerShell 7 directly and wait
+            $ArgList = "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$CurrentScriptPath`"", "-GitHubToken", "`"$GitHubToken`"" # NO -InitialRun
+            Write-ColorOutput Cyan "Invoking: pwsh $ArgList"
+            try {
+                Start-Process pwsh -ArgumentList $ArgList -Wait -ErrorAction Stop
+                Write-ColorOutput Green "PowerShell 7 execution completed. Returning from current session."
+                return # Use return instead of exit to avoid terminating the calling context
+            }
+            catch { Write-ColorOutput Red "FATAL: Failed to invoke PS7 process: $($_.Exception.Message)"; throw }
+        }
+        else {
+            Write-ColorOutput Cyan "Detected normal execution context. Using standard restart approach..."
+            $ArgList = "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$CurrentScriptPath`"", "-GitHubToken", "`"$GitHubToken`"" # NO -InitialRun
+            Write-ColorOutput Cyan "Starting: pwsh $ArgList"
+            try { Start-Process pwsh -ArgumentList $ArgList -ErrorAction Stop; Write-ColorOutput Green "New PS7 process started. Exiting current PS5.1 session."; exit 0 }
+            catch { Write-ColorOutput Red "FATAL: Failed to start new PS7 process: $($_.Exception.Message)"; exit 1 }
+        }
     }
     else { Write-ColorOutput Cyan "No restart needed or conditions not met." }
     Write-ColorOutput Yellow "--- End of Winget & PowerShell 7 Installation ---"
