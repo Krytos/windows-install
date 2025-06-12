@@ -67,7 +67,7 @@ Write-ColorOutput Cyan "Current Location: $(Get-Location)"
 if (-not (Get-PSDrive -Name HKCR -ErrorAction SilentlyContinue)) {
     # If it doesn't exist, create it
     Write-ColorOutput Yellow "Creating HKCR PSDrive..."
-    New-PSDrive -Name "HKCR" -PSProvider Registry -Root "HKEY_CLASSES_ROOT" -ErrorAction Stop | Out-Null
+    New-PSDrive -Name "HKCR" -PSProvider Registry -Root "HKEY_CLASSES_ROOT" | Out-Null
 }
 
 #region Core Functions
@@ -84,9 +84,8 @@ function InstallAllTheThings {
         # Ensure NuGet is available in PS7+ if needed later
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
             Write-ColorOutput Yellow "Installing NuGet Package Provider..."
-            Install-PackageProvider -Name NuGet -Force -ErrorAction Stop
+            Install-PackageProvider -Name NuGet -Force
         }
-        # Run installations that require PS7 / Winget
         InstallDependencies
         QoLRegConfigurations
         InstallBasicKit
@@ -99,6 +98,7 @@ function InstallAllTheThings {
         StartServices
         TakeOwnership
         TerminalStuff # Depends on PS7/Winget being present
+        Gaming
 
         # Autostart AHK script
         $ahkScriptPath = Join-Path $env:USERPROFILE "autostart.ahk"
@@ -109,7 +109,7 @@ function InstallAllTheThings {
         else {
             Write-ColorOutput Green "Downloading Autostart.ahk..."
             try {
-                Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/autostart.ahk" -Destination $ahkScriptPath -ErrorAction Stop
+                Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/config/autostart.ahk" -Destination $ahkScriptPath
                 if (Test-Path $ahkScriptPath) {
                     Write-ColorOutput Green "Starting downloaded $ahkScriptPath"
                     Start-Process $ahkScriptPath
@@ -124,13 +124,15 @@ function InstallAllTheThings {
 }
 
 function Update-Environment {
-    # This function attempts to refresh the current session's environment vars.
-    # Note: Immediate effect, especially for PATH changes via AppX, isn't guaranteed.
-    Write-ColorOutput Cyan "Attempting to update environment variables for current session..."
-    $env:Path = ([System.Environment]::GetEnvironmentVariable("Path", "Machine", [System.EnvironmentVariableTarget]::Machine).TrimEnd(';') + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User", [System.EnvironmentVariableTarget]::User).TrimEnd(';')) -replace ';+', ';'
-    # Reload PATH into current session
-    $env:Path = $env:Path
-    Write-ColorOutput Cyan "Session PATH updated (best effort)."
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    foreach ($level in "Machine", "User") {
+        [Environment]::GetEnvironmentVariables($level).GetEnumerator() | ForEach-Object {
+            if ($_.Name -eq 'Path' -and $null -ne $_.Value) {
+                $_.Value = ($((Get-Content "Env:$($_.Name)") + ";$($_.Value)") -split ';' | Select-Object -unique) -join ';'
+            }
+            $_
+        } | Set-Content -Path { "Env:$($_.Name)" }
+    }
 }
 
 function InstallWingetAndRestartIfInitialRun {
@@ -151,10 +153,10 @@ function InstallWingetAndRestartIfInitialRun {
         $vcRedistPath = Join-Path $env:TEMP "vc_redist.x64.exe"
         try {
             Write-ColorOutput Cyan "Downloading latest VC++ Redistributable..."
-            Start-BitsTransfer -Source $vcRedistUrl -Destination $vcRedistPath -ErrorAction Stop
+            Start-BitsTransfer -Source $vcRedistUrl -Destination $vcRedistPath
             Write-ColorOutput Cyan "Installing/Verifying VC++ Redistributable silently..."
             # Installer handles existing versions gracefully
-            Start-Process -FilePath $vcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -ErrorAction Stop
+            Start-Process -FilePath $vcRedistPath -ArgumentList "/install /quiet /norestart" -Wait
             Write-ColorOutput Green "VC++ Redistributable check/install complete."
         }
         catch {
@@ -198,6 +200,7 @@ function InstallWingetAndRestartIfInitialRun {
             if (Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue) {
                 Write-ColorOutput Green "Winget (Microsoft.DesktopAppInstaller) is already installed."
                 $wingetInstalled = $true # Crucial: Mark as installed so PS7 install can proceed
+                winget source update
             }
         }
         catch { Write-ColorOutput Yellow "Could not reliably check for Winget: $($_.Exception.Message)" }
@@ -278,7 +281,7 @@ function InstallWingetAndRestartIfInitialRun {
             $ArgList = "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$CurrentScriptPath`"", "-GitHubToken", "`"$GitHubToken`"" # NO -InitialRun
             Write-ColorOutput Cyan "Invoking: pwsh $ArgList"
             try {
-                Start-Process pwsh -ArgumentList $ArgList -Wait -ErrorAction Stop
+                Start-Process pwsh -ArgumentList $ArgList -Wait
                 Write-ColorOutput Green "PowerShell 7 execution completed. Returning from current session."
                 return # Use return instead of exit to avoid terminating the calling context
             }
@@ -288,7 +291,7 @@ function InstallWingetAndRestartIfInitialRun {
             Write-ColorOutput Cyan "Detected normal execution context. Using standard restart approach..."
             $ArgList = "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$CurrentScriptPath`"", "-GitHubToken", "`"$GitHubToken`"" # NO -InitialRun
             Write-ColorOutput Cyan "Starting: pwsh $ArgList"
-            try { Start-Process pwsh -ArgumentList $ArgList -ErrorAction Stop; Write-ColorOutput Green "New PS7 process started. Exiting current PS5.1 session."; exit 0 }
+            try { Start-Process pwsh -ArgumentList $ArgList; Write-ColorOutput Green "New PS7 process started. Exiting current PS5.1 session."; exit 0 }
             catch { Write-ColorOutput Red "FATAL: Failed to start new PS7 process: $($_.Exception.Message)"; exit 1 }
         }
     }
@@ -303,7 +306,7 @@ function InstallNeededForScript {
     # These should run in PS7+ after potential restart
     Write-ColorOutput Magenta "--- Installing Script Prerequisites (jq, wget) ---"
     try {
-        Set-PSRepository PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
         winget install -h jqlang.jq --accept-source-agreements --accept-package-agreements -e
         winget install -h GerbenBosscher.Wget --accept-source-agreements --accept-package-agreements -e # Corrected ID likely
     }
@@ -320,7 +323,7 @@ function DownlaodInstallGithub($name, $repo, $filePattern) {
     try {
         # Fetch the latest release information
         Write-ColorOutput Cyan "Fetching latest release info for $repo..."
-        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing -ErrorAction Stop
+        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing
 
         # Find the asset URL
         $assetUrl = $releaseInfo.assets | Where-Object { $_.name -like $filePattern } | Select-Object -ExpandProperty browser_download_url -First 1
@@ -332,17 +335,17 @@ function DownlaodInstallGithub($name, $repo, $filePattern) {
 
         # Download the file
         Write-ColorOutput Green "Downloading $name from $assetUrl..."
-        Start-BitsTransfer -Source $assetUrl -Destination $downloadPath -ErrorAction Stop
+        Start-BitsTransfer -Source $assetUrl -Destination $downloadPath
 
         # Check if the file was downloaded successfully
         if (Test-Path $downloadPath) {
             Write-ColorOutput Green "Download completed. Installing $name silently..."
             # Use /S or /VERYSILENT common silent switches. May need adjustment per installer.
-            Start-Process -FilePath $downloadPath -ArgumentList "/S" -Wait -ErrorAction Stop
+            Start-Process -FilePath $downloadPath
             Write-ColorOutput Green "$name installation command issued."
         }
         else {
-            # Should be caught by Start-BitsTransfer -ErrorAction Stop, but safety check
+            # Should be caught by Start-BitsTransfer, but safety check
             Write-ColorOutput Red "Failed to download $name (File not found after BITS transfer)."
         }
     }
@@ -427,7 +430,7 @@ function InstallJdownloader {
         winget install -h AppWork.JDownloader --accept-source-agreements --accept-package-agreements -e
         $jdownloaderConfigDest = "C:\Program Files\JDownloader\cfg\org.jdownloader.controlling.filter.LinkFilterSettings.filterlist.json" # Assuming default install path
         if (Test-Path (Split-Path $jdownloaderConfigDest)) {
-            Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/jdownloader.json" -Destination $jdownloaderConfigDest -ErrorAction Stop
+            Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/config/jdownloader.json" -Destination $jdownloaderConfigDest
             Write-ColorOutput Green "JDownloader config applied."
         }
         else {
@@ -469,11 +472,11 @@ function InstallMedia {
 
 function InstallDependencies {
     Write-ColorOutput Magenta "--- Installing Core Dependencies ---"
-    # Use -i (--ignore-unavailable) as some might already be present depending on Windows version
-    winget install -h Microsoft.DotNet.DesktopRuntime.6 --accept-source-agreements --accept-package-agreements -e -i
-    winget install -h Microsoft.XNARedist --accept-source-agreements --accept-package-agreements -e -i
-    winget install -h Microsoft.VCRedist.2015+.x86 --accept-source-agreements --accept-package-agreements -e -i
-    winget install -h Microsoft.VCRedist.2015+.x64 --accept-source-agreements --accept-package-agreements -e -i
+    # Use (--ignore-unavailable) as some might already be present depending on Windows version
+    winget install -h Microsoft.DotNet.DesktopRuntime.6 --accept-source-agreements --accept-package-agreements -e
+    winget install -h Microsoft.XNARedist --accept-source-agreements --accept-package-agreements -e
+    winget install -h Microsoft.VCRedist.2015+.x86 --accept-source-agreements --accept-package-agreements -e
+    winget install -h Microsoft.VCRedist.2015+.x64 --accept-source-agreements --accept-package-agreements -e
 }
 
 function InstallDevTools {
@@ -491,19 +494,6 @@ function InstallPythonAndPackages {
         Write-ColorOutput Red "uv command not found. Skipping Python/Tool installation."
         return
     }
-    $pythonVersions = @("3.7", "3.8", "3.9", "3.10", "3.11", "3.12")
-    foreach ($version in $pythonVersions) {
-        Write-ColorOutput Cyan "Installing Python $version via uv..."
-        try {
-            uv python install $version
-        }
-        catch {
-            # Use -f format operator
-            $errorMessage = "Failed to install Python '{0}': {1}" -f $version, $_.Exception.Message
-            Write-ColorOutput Red $errorMessage
-        }
-    }
-
     $pythonTools = @("hashcat", "ipython", "nuitka", "ruff")
     foreach ($tool in $pythonTools) {
         Write-ColorOutput Cyan "Installing Python tool '$tool' via uv..."
@@ -549,7 +539,7 @@ regenerationSharedArchive=1
 `.py`=$(if (-not $SkipPyFileAssociation.IsPresent) {"1"} else {"0"})
 "@
     try {
-        Set-Content -Path $tempConfigPath -Value $configContent -Encoding ASCII -Force -ErrorAction Stop
+        Set-Content -Path $tempConfigPath -Value $configContent -Encoding ASCII -Force
         $installCommand = "winget install -e --id JetBrains.PyCharm.Professional --override `"/S /CONFIG=$tempConfigPath /D=$InstallDir`" --accept-source-agreements --accept-package-agreements"
         Write-ColorOutput Cyan "Running: $installCommand"
         Invoke-Expression $installCommand
@@ -574,7 +564,7 @@ function SetupGit {
         git config --global user.name "Kevin Meinon"
         git config --global --add safe.directory '*'
         Write-ColorOutput Green "Git user configured globally."
-        LoginGitHubCLI -Token $GitHubToken -ErrorAction Stop
+        LoginGitHubCLI -Token $GitHubToken
     }
     catch {
         Write-ColorOutput Red "Failed during Git setup: $($_.Exception.Message)"
@@ -618,40 +608,40 @@ function TakeOwnership {
         Remove-Item -Path "Registry::HKCR\Drive\shell\runas" -Recurse -Force -ErrorAction SilentlyContinue
 
         # Files
-        New-Item -Path "Registry::HKCR\*\shell\TakeOwnership" -Force -ErrorAction Stop | Out-Null
-        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "(Default)" -Value "Take Ownership" -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "HasLUAShield" -PropertyType String -Value "" -Force -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "NeverDefault" -PropertyType String -Value "" -Force -ErrorAction Stop
-        New-Item -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Force -ErrorAction Stop | Out-Null
+        New-Item -Path "Registry::HKCR\*\shell\TakeOwnership" -Force | Out-Null
+        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "(Default)" -Value "Take Ownership"
+        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "HasLUAShield" -PropertyType String -Value "" -Force
+        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force
+        New-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership" -Name "NeverDefault" -PropertyType String -Value "" -Force
+        New-Item -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Force | Out-Null
         $commandValue = 'powershell -windowstyle hidden -command "Start-Process cmd -ArgumentList ''/c takeown /f \""%1\"" && icacls \""%1\"" /grant *S-1-3-4:F /t /c /l'' -Verb runAs"'
-        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Name "(Default)" -Value $commandValue -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Name "IsolatedCommand" -Value $commandValue -ErrorAction Stop
+        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Name "(Default)" -Value $commandValue
+        Set-ItemProperty -Path "Registry::HKCR\*\shell\TakeOwnership\command" -Name "IsolatedCommand" -Value $commandValue
 
         # Directories
-        New-Item -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Force -ErrorAction Stop | Out-Null
-        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "(Default)" -Value "Take Ownership" -ErrorAction Stop
+        New-Item -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Force | Out-Null
+        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "(Default)" -Value "Take Ownership"
         $appliesToValue = 'NOT (System.ItemPathDisplay:="C:\Users" OR System.ItemPathDisplay:="C:\ProgramData" OR System.ItemPathDisplay:="C:\Windows" OR System.ItemPathDisplay:="C:\Windows\System32" OR System.ItemPathDisplay:="C:\Program Files" OR System.ItemPathDisplay:="C:\Program Files (x86)")'
-        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "AppliesTo" -Value $appliesToValue -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "HasLUAShield" -PropertyType String -Value "" -Force -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "Position" -Value "middle" -ErrorAction Stop
-        New-Item -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Force -ErrorAction Stop | Out-Null
+        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "AppliesTo" -Value $appliesToValue
+        New-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "HasLUAShield" -PropertyType String -Value "" -Force
+        New-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force
+        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership" -Name "Position" -Value "middle"
+        New-Item -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Force | Out-Null
         $dirCommandValue = 'powershell -windowstyle hidden -command "$Y = ($null | choice).Substring(1,1); Start-Process cmd -ArgumentList (''/c takeown /f \""%1\"" /r /d '' + $Y + '' && icacls \""%1\"" /grant *S-1-3-4:F /t /c /l /q'') -Verb runAs"'
-        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Name "(Default)" -Value $dirCommandValue -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Name "IsolatedCommand" -Value $dirCommandValue -ErrorAction Stop
+        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Name "(Default)" -Value $dirCommandValue
+        Set-ItemProperty -Path "Registry::HKCR\Directory\shell\TakeOwnership\command" -Name "IsolatedCommand" -Value $dirCommandValue
 
         # Drives
-        New-Item -Path "Registry::HKCR\Drive\shell\runas" -Force -ErrorAction Stop | Out-Null
-        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "(Default)" -Value "Take Ownership" -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "HasLUAShield" -PropertyType String -Value "" -Force -ErrorAction Stop
-        New-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "Position" -Value "middle" -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "AppliesTo" -Value 'NOT (System.ItemPathDisplay:="C:\")' -ErrorAction Stop
-        New-Item -Path "Registry::HKCR\Drive\shell\runas\command" -Force -ErrorAction Stop | Out-Null
+        New-Item -Path "Registry::HKCR\Drive\shell\runas" -Force | Out-Null
+        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "(Default)" -Value "Take Ownership"
+        New-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "HasLUAShield" -PropertyType String -Value "" -Force
+        New-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "NoWorkingDirectory" -PropertyType String -Value "" -Force
+        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "Position" -Value "middle"
+        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas" -Name "AppliesTo" -Value 'NOT (System.ItemPathDisplay:="C:\")'
+        New-Item -Path "Registry::HKCR\Drive\shell\runas\command" -Force | Out-Null
         $driveCommandValue = 'cmd.exe /c takeown /f "%1\" /r /d y && icacls "%1\" /grant *S-1-3-4:F /t /c'
-        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas\command" -Name "(Default)" -Value $driveCommandValue -ErrorAction Stop
-        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas\command" -Name "IsolatedCommand" -Value $driveCommandValue -ErrorAction Stop
+        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas\command" -Name "(Default)" -Value $driveCommandValue
+        Set-ItemProperty -Path "Registry::HKCR\Drive\shell\runas\command" -Name "IsolatedCommand" -Value $driveCommandValue
 
         Write-ColorOutput Green "Take Ownership registry entries applied successfully."
     }
@@ -667,10 +657,10 @@ function AddRegistryEntries {
         if (Test-Path $wizTreeExe) {
             $regPathCommand = "Registry::HKLM\SOFTWARE\Classes\*\shell\WizTree\command"
             $regPathIcon = "Registry::HKLM\SOFTWARE\Classes\*\shell\WizTree"
-            New-Item -Path $regPathIcon -Force -ErrorAction Stop | Out-Null
-            New-Item -Path $regPathCommand -Force -ErrorAction Stop | Out-Null
-            Set-ItemProperty -Path $regPathCommand -Name "(Default)" -Value "`"$wizTreeExe`" `"%1`"" -ErrorAction Stop
-            Set-ItemProperty -Path $regPathIcon -Name "Icon" -Value "`"$wizTreeExe`",0" -ErrorAction Stop
+            New-Item -Path $regPathIcon -Force | Out-Null
+            New-Item -Path $regPathCommand -Force | Out-Null
+            Set-ItemProperty -Path $regPathCommand -Name "(Default)" -Value "`"$wizTreeExe`" `"%1`""
+            Set-ItemProperty -Path $regPathIcon -Name "Icon" -Value "`"$wizTreeExe`",0"
             Write-ColorOutput Green "WizTree context menu entry added."
         }
         else { Write-ColorOutput Yellow "WizTree executable not found at '$wizTreeExe'. Skipping context menu entry." }
@@ -683,18 +673,18 @@ function Start-Services {
     $services = @("ssh-agent")
     foreach ($serviceName in $services) {
         try {
-            $service = Get-Service $serviceName -ErrorAction Stop
+            $service = Get-Service $serviceName
             if ($service.Status -ne 'Running') {
                 Write-ColorOutput Cyan "Setting '$serviceName' startup to Automatic and starting..."
-                Set-Service -Name $serviceName -StartupType Automatic -ErrorAction Stop
-                Start-Service -Name $serviceName -ErrorAction Stop
+                Set-Service -Name $serviceName -StartupType Automatic
+                Start-Service -Name $serviceName
                 Write-ColorOutput Green "'$serviceName' started."
             }
             else {
                 Write-ColorOutput Green "'$serviceName' is already running."
                 if ($service.StartType -ne 'Automatic') {
                     Write-ColorOutput Cyan "Setting '$serviceName' startup to Automatic..."
-                    Set-Service -Name $serviceName -StartupType Automatic -ErrorAction Stop
+                    Set-Service -Name $serviceName -StartupType Automatic
                 }
             }
         }
@@ -715,13 +705,13 @@ function TerminalStuff {
         Set-WindowsTerminalAsDefault # Call internal function
 
         winget install -h JanDeDobbeleer.OhMyPosh --accept-source-agreements --accept-package-agreements -e
-        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -Force -ErrorAction Stop }
-        Install-Module -Name Terminal-Icons -Repository PSGallery -Force -ErrorAction Stop
+        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -Force }
+        Install-Module -Name Terminal-Icons -Repository PSGallery -Force
         Update-Environment
         oh-my-posh font install FiraCode # May require user interaction
 
         # Install Clink
-        winget install -h ChrisLundquist.Clink --accept-source-agreements --accept-package-agreements -e
+        winget install -h chrisant996.Clink --accept-source-agreements --accept-package-agreements -e
         $clinkPath = "C:\Program Files (x86)\clink" # Default path
         if (Test-Path $clinkPath) {
             Write-ColorOutput Cyan "Adding Clink path to session PATH..."
@@ -732,14 +722,14 @@ function TerminalStuff {
             $ohMyPoshLuaContent = @"
 load(io.popen('oh-my-posh init cmd --config=""$env:POSH_THEMES_PATH\jandedobbeleer.omp.json""'):read(""*a""))()
 "@
-            Set-Content -Path (Join-Path $clinkConfigDir "oh-my-posh.lua") -Value $ohMyPoshLuaContent -ErrorAction Stop
+            Set-Content -Path (Join-Path $clinkConfigDir "oh-my-posh.lua") -Value $ohMyPoshLuaContent
         }
         else { Write-ColorOutput Yellow "Clink path not found. Skipping config." }
 
         PowerShellProfileSettings # Call profile function
 
         $wtSettingsDest = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-        Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/terminal-settings.json" -Destination $wtSettingsDest -ErrorAction Stop
+        Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/config/terminal-settings.json" -Destination $wtSettingsDest
         Write-ColorOutput Green "Terminal settings downloaded."
 
     }
@@ -761,8 +751,8 @@ function Set-WindowsTerminalAsDefault {
         if (-not (Test-Path $consoleRegPath)) { New-Item -Path $consoleRegPath -Force | Out-Null }
         # Ensure %%Startup exists
         if (-not (Test-Path "$consoleRegPath\%%Startup")) { New-Item -Path "$consoleRegPath\%%Startup" -Force | Out-Null }
-        New-ItemProperty -Path "$consoleRegPath\%%Startup" -Name "DelegationConsole" -Value "{00000000-0000-0000-0000-000000000000}" -PropertyType String -Force -ErrorAction Stop
-        New-ItemProperty -Path "$consoleRegPath\%%Startup" -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}" -PropertyType String -Force -ErrorAction Stop
+        New-ItemProperty -Path "$consoleRegPath\%%Startup" -Name "DelegationConsole" -Value "{00000000-0000-0000-0000-000000000000}" -PropertyType String -Force
+        New-ItemProperty -Path "$consoleRegPath\%%Startup" -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}" -PropertyType String -Force
 
         Write-ColorOutput Green "Windows Terminal has been set as the default console host (Registry update)."
     }
@@ -976,9 +966,9 @@ function prompt {
         $ps5ProfileDir = Split-Path $ps5ProfilePath -Parent
         if (-not (Test-Path $ps5ProfileDir)) {
             Write-ColorOutput Yellow "PS 5.1 profile directory '$ps5ProfileDir' not found? Attempting to create..."
-            New-Item -Path $ps5ProfileDir -ItemType Directory -Force -ErrorAction Stop
+            New-Item -Path $ps5ProfileDir -ItemType Directory -Force
         }
-        Set-Content -Path $ps5ProfilePath -Value $commonProfileContent -Force -Encoding UTF8 -ErrorAction Stop
+        Set-Content -Path $ps5ProfilePath -Value $commonProfileContent -Force -Encoding UTF8
         Write-ColorOutput Green "PS 5.1 AllUsers profile configured successfully."
     }
     catch {
@@ -990,7 +980,7 @@ function prompt {
         Write-ColorOutput Cyan "Attempting to configure PS 7+ AllUsers profile: $ps7ProfilePath"
         try {
             # Directory should exist if pwsh was found correctly
-            Set-Content -Path $ps7ProfilePath -Value $commonProfileContent -Force -Encoding UTF8 -ErrorAction Stop
+            Set-Content -Path $ps7ProfilePath -Value $commonProfileContent -Force -Encoding UTF8
             Write-ColorOutput Green "PS 7+ AllUsers profile configured successfully."
         }
         catch {
@@ -1026,8 +1016,8 @@ function NvidiaSettings {
     "globalhighlights": { "enabled": true }, "video": { "irEnabled": false, "irBufferLength": 180 }, "micmode": { "mode": "on" } } }
 "@
 
-        Set-Content -Path $gallerySettingsPath -Value $gallery_settings -Encoding UTF8 -Force -ErrorAction Stop
-        Set-Content -Path $shareSettingsPath -Value $share_settings -Encoding UTF8 -Force -ErrorAction Stop
+        Set-Content -Path $gallerySettingsPath -Value $gallery_settings -Encoding UTF8 -Force
+        Set-Content -Path $shareSettingsPath -Value $share_settings -Encoding UTF8 -Force
         Write-ColorOutput Green "NVIDIA Overlay Gallery and Share settings applied."
 
     }
@@ -1039,10 +1029,11 @@ function NvidiaSettings {
 Write-Host "=== REACHED MAIN EXECUTION BLOCK ===" -ForegroundColor Magenta
 Write-Host "About to call InstallAllTheThings function..." -ForegroundColor Magenta
 try {
-    InstallAllTheThings -ErrorAction Stop # Call the master function, stop script on unhandled error within it
+    InstallAllTheThings # Call the master function, stop script on unhandled error within it
     Write-ColorOutput Green "##############################################"
     Write-ColorOutput Green "All installations and configurations completed."
     Write-ColorOutput Green "##############################################"
+    Pause
 }
 catch {
     Write-ColorOutput Red "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
