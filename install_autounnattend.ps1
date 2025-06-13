@@ -717,12 +717,8 @@ function TerminalStuff {
             Write-ColorOutput Cyan "Adding Clink path to session PATH..."
             $env:Path = "$($env:Path.TrimEnd(';'));$clinkPath" -replace ';+', ';'
             try { Start-Process -FilePath "cmd.exe" -ArgumentList "/c clink set clink.logo none" -Wait -WindowStyle Hidden } catch { Write-ColorOutput Yellow "Could not run clink set command: $($_.Exception.Message)" }
-            $clinkConfigDir = Join-Path $env:LOCALAPPDATA "clink"
-            New-Item -Path $clinkConfigDir -ItemType Directory -Force -ErrorAction SilentlyContinue
-            $ohMyPoshLuaContent = @"
-load(io.popen('oh-my-posh init cmd --config=""$env:POSH_THEMES_PATH\jandedobbeleer.omp.json""'):read(""*a""))()
-"@
-            Set-Content -Path (Join-Path $clinkConfigDir "oh-my-posh.lua") -Value $ohMyPoshLuaContent
+            clink config prompt use oh-my-posh
+            clink set ohmyposh.theme "https://raw.githubusercontent.com/Krytos/windows-install/refs/heads/main/config/krytos.omp.json"
         }
         else { Write-ColorOutput Yellow "Clink path not found. Skipping config." }
 
@@ -806,13 +802,7 @@ function QoLRegConfigurations {
 
 function PowerShellProfileSettings {
     Write-ColorOutput Magenta "--- Configuring PowerShell Profiles (All Users, All Hosts) ---"
-    # Requires Administrator privileges    # Define the common profile content
-    $wtSettingsDest = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/main/config/terminal-settings.json" -Destination $wtSettingsDest
 
-    # --- Target Paths ---
-    # Windows PowerShell (PS 5.1) All Users Profile Path
-    $ps5ProfilePath = Join-Path $PSHOME "profile.ps1" # $PSHOME is correct for PS5.1 system location
 
     # PowerShell 7+ All Users Profile Path
     $ps7ProfilePath = ""
@@ -825,29 +815,12 @@ function PowerShellProfileSettings {
         Write-ColorOutput Yellow "pwsh.exe not found. Cannot determine PS7+ AllUsers profile path."
     }
 
-    # --- Apply Profile Content ---
-    # Apply to PS 5.1
-    Write-ColorOutput Cyan "Attempting to configure PS 5.1 AllUsers profile: $ps5ProfilePath"
-    try {
-        # Ensure directory exists (should for $PSHOME, but belt-and-suspenders)
-        $ps5ProfileDir = Split-Path $ps5ProfilePath -Parent
-        if (-not (Test-Path $ps5ProfileDir)) {
-            Write-ColorOutput Yellow "PS 5.1 profile directory '$ps5ProfileDir' not found? Attempting to create..."
-            New-Item -Path $ps5ProfileDir -ItemType Directory -Force
-        }
-        Set-Content -Path $ps5ProfilePath -Value $commonProfileContent -Force -Encoding UTF8
-        Write-ColorOutput Green "PS 5.1 AllUsers profile configured successfully."
-    }
-    catch {
-        Write-ColorOutput Red "Failed to configure PS 5.1 AllUsers profile: $($_.Exception.Message)"
-    }
-
     # Apply to PS 7+ if path found
     if ($ps7ProfilePath -and (Test-Path (Split-Path $ps7ProfilePath -Parent))) {
         Write-ColorOutput Cyan "Attempting to configure PS 7+ AllUsers profile: $ps7ProfilePath"
         try {
-            # Directory should exist if pwsh was found correctly
-            Set-Content -Path $ps7ProfilePath -Value $commonProfileContent -Force -Encoding UTF8
+
+            Start-BitsTransfer -Source "https://raw.githubusercontent.com/Krytos/windows-install/refs/heads/main/config/profile.ps1" -Destination $ps7ProfilePath
             Write-ColorOutput Green "PS 7+ AllUsers profile configured successfully."
         }
         catch {
