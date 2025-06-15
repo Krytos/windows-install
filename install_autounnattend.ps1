@@ -19,6 +19,8 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
     $PowerShell7 = $true
 }
 
+Start-Transcript -Path "$env:USERPROFILE\Desktop\install_autounnattend.log" -Append -Force
+
 Write-Host "Script starting - PowerShell Version: $($PSVersionTable.PSVersion.ToString())" -ForegroundColor Cyan
 Write-Host "Parameters - InitialRun: $InitialRun, PowerShell7: $PowerShell7, GitHubToken: $($GitHubToken -ne $null)" -ForegroundColor Cyan
 Write-Host "Invocation context - InvocationName: '$($MyInvocation.InvocationName)', Line: '$($MyInvocation.Line)'" -ForegroundColor Cyan
@@ -94,7 +96,6 @@ function InstallAllTheThings {
         InstallDevTools
         AddRegistryEntries
         NvidiaSettings
-        # PoEStuff function missing, add if needed
         StartServices
         TakeOwnership
         TerminalStuff # Depends on PS7/Winget being present
@@ -418,7 +419,6 @@ function InstallBasicKit {
     winget install -h Telegram.TelegramDesktop --accept-source-agreements --accept-package-agreements -e
     winget install -h 9N8G7TSCL18R --accept-source-agreements --accept-package-agreements -e
     winget install -h Google.QuickShare --accept-source-agreements --accept-package-agreements -e --disable-interactivity
-    winget install -h Mozilla.Firefox.DeveloperEdition --accept-source-agreements --accept-package-agreements -e
     winget install -h Parsec.Parsec --accept-source-agreements --accept-package-agreements -e
     winget install -h 9NCBCSZSJRSB --accept-source-agreements --accept-package-agreements -e
     winget install --id lsd-rs.lsd --accept-package-agreements --accept-source-agreements -e
@@ -486,6 +486,44 @@ function InstallDevTools {
     InstallPythonAndPackages # Contains winget installs
     SetupGit # Contains winget installs
     winget install Nvidia.CUDA --accept-source-agreements --accept-package-agreements -e
+    InstallWSL
+}
+
+function InstallWSL {
+    Write-ColorOutput Magenta "--- Installing WSL and Ubuntu ---"
+    try {
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
+        Write-ColorOutput Cyan "WSL and Virtual Machine Platform features enabled. Restarting required."
+        wsl --install -d Ubuntu-24.04
+        Write-ColorOutput Green "WSL and Ubuntu installed successfully."
+
+        $commandToRun = 'powershell.exe -NoProfile -WindowStyle Hidden -Command "wsl --set-default-version 2"'
+        $runOnceRegistryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+        $runOnceEntryName = "SetWSL2DefaultAfterRestart"
+
+        Write-Host "Setting up command to run after next logon: $commandToRun"
+
+        try {
+            if (-not (Test-Path $runOnceRegistryPath)) {
+                New-Item -Path $runOnceRegistryPath -Force -ErrorAction Stop | Out-Null
+                Write-Host "Created RunOnce registry path: $runOnceRegistryPath"
+            }
+
+            Set-ItemProperty -Path $runOnceRegistryPath -Name $runOnceEntryName -Value $commandToRun -Type String -Force -ErrorAction Stop
+            Write-Host "Successfully set RunOnce registry entry '$runOnceEntryName' in $runOnceRegistryPath."
+
+            Write-Host "The command 'wsl --set-default-version 2' will run after the next user logon."
+        }
+        catch {
+            Write-Error "Failed to set up RunOnce command: $($_.Exception.Message)"
+            Write-Error "Please ensure you are running this script as Administrator."
+        }
+    }
+    catch {
+        Write-ColorOutput Red "Failed to install WSL/Ubuntu: $($_.Exception.Message)"
+    }
+
 }
 
 function InstallPythonAndPackages {
@@ -515,7 +553,7 @@ function InstallPythonAndPackages {
         Write-ColorOutput Red $errorMessage
     }
 
-    Install-PyCharm -SkipPyFileAssociation # Call internal function
+    # Install-PyCharm -SkipPyFileAssociation
 }
 
 # Internal function for PyCharm install logic
@@ -560,9 +598,38 @@ function SetupGit {
         return
     }
     try {
-        git config --global user.email "kmeinon@gmail.com"
         git config --global user.name "Kevin Meinon"
+        git config --global user.email "kevin@meinon.com"
         git config --global --add safe.directory '*'
+        git config --global core.autocrlf false
+        git config --global core.excludesFile '~/.gitignore'
+        git config --global init.defaultBranch main
+        git config --global pull.rebase true
+        git config --global rebase.autosquash true
+        git config --global rebase.autostash true
+        git config --global rebase.updateRefs true
+        git config --global push.autoSetupRemote true
+        git config --global push.followtags true
+        git config --global commit.verbose true
+        git config --global rerere.enabled true
+        git config --global rerere.autoupdate true
+        git config --global help.autocorrect 1
+        git config --global core.pager delta
+        git config --global interactive.diffFilter delta --color-only
+        git config --global diff.algorithm histogram
+        git config --global branch.sort -committerdate
+        git config --global --add url."git@github.com:".insteadOf "https://github.com/"
+        git config --global --add url."git@github.com:".insteadOf "gh:"
+
+        $gitWorkConfig = @"
+[user]
+    name = Kevin Meinon
+	email = "kevin.meinon@candylabs.de"
+"@
+        $gitWorkConfig | Out-File -FilePath "~/.gitconfig_work" -Encoding UTF8 -Force
+        git config --global includeif."gitdir:**/code/work/".path "~/.gitconfig_work"
+
+
         Write-ColorOutput Green "Git user configured globally."
         LoginGitHubCLI -Token $GitHubToken
     }
@@ -873,14 +940,16 @@ try {
     Write-ColorOutput Green "##############################################"
     Write-ColorOutput Green "All installations and configurations completed."
     Write-ColorOutput Green "##############################################"
-    Pause
+    Stop-Transcript
+    Restart-Computer -Force
 }
 catch {
     Write-ColorOutput Red "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     Write-ColorOutput Red "An UNHANDLED ERROR occurred in the main script execution:"
     Write-ColorOutput Red $_.Exception.ToString() # Use ToString() for more detail potentially
     Write-ColorOutput Red "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    Stop-Transcript
     exit 1 # Exit with error code
 }
-
+Stop-Transcript
 exit 0 # Explicitly exit with success code
