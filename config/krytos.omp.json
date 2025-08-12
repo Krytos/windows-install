@@ -89,15 +89,6 @@
                     "type": "shell"
                 },
                 {
-                    "background": "#8f43f3",
-                    "foreground": "#ffffff",
-                    "leading_diamond": "\ue0b2",
-                    "style": "diamond",
-                    "template": "\ue266 {{ round .PhysicalPercentUsed .Precision }}% ",
-                    "trailing_diamond": "<transparent,#8f43f3>\ue0b2</>",
-                    "type": "sysinfo"
-                },
-                {
                     "background": "#ffffff",
                     "foreground": "#ce092f",
                     "leading_diamond": "\ue0b2",
@@ -362,18 +353,6 @@
                     "template": "\ue755 {{ if .Error }}{{ .Error }}{{ else }}{{ .Full }}{{ end }} ",
                     "trailing_diamond": "<transparent,#fe562e>\ue0b2</>",
                     "type": "swift"
-                },
-                {
-                    "background": "#234d70",
-                    "foreground": "#d6deeb",
-                    "leading_diamond": "\ue0b2",
-                    "properties": {
-                        "time_format": "15:04:05"
-                    },
-                    "style": "diamond",
-                    "template": "\ue641 {{ .CurrentDate | date .Format }}",
-                    "trailing_diamond": "\ue0b4",
-                    "type": "time"
                 }
             ],
             "type": "prompt"
