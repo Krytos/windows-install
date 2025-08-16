@@ -148,6 +148,8 @@ function InstallWingetAndRestartIfInitialRun {
 
 
     if ($InitialRun.IsPresent) {
+        Write-ColorOutput Green "Initial Run: Setting up environment..."
+        setx XDG_CONFIG_HOME "C:/Users/Kevin/.config"
         Write-ColorOutput Green "Initial Run: Installing prerequisites..."
         # --- 1. Ensure Latest VC++ Redistributable (Provides VCLibs) ---
         $vcRedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -626,8 +628,9 @@ function SetupGit {
     name = Kevin Meinon
 	email = "kevin.meinon@candylabs.de"
 "@
-        $gitWorkConfig | Out-File -FilePath "~/.gitconfig_work" -Encoding UTF8 -Force
-        git config --global includeif."gitdir:**/code/work/".path "~/.gitconfig_work"
+        $gitWorkConfig | Out-File -FilePath "~/.config/git/.gitconfig_work" -Encoding UTF8 -Force
+        git config --global includeif."gitdir:**/code/work/".path "~/.config/git/.gitconfig_work"
+        git config --global includeif."gitdir:**/Dev/work/".path "~/.config/git/.gitconfig_work"
 
 
         Write-ColorOutput Green "Git user configured globally."
