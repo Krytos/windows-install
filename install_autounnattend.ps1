@@ -627,6 +627,8 @@ function SetupGit {
 [user]
     name = Kevin Meinon
 	email = "kevin.meinon@candylabs.de"
+    [core]
+	    autocrlf = input
 "@
         $gitWorkConfig | Out-File -FilePath "~/.config/git/.gitconfig_work" -Encoding UTF8 -Force
         git config --global includeif."gitdir:**/code/work/".path "~/.config/git/.gitconfig_work"

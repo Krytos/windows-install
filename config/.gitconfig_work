@@ -1,0 +1,5 @@
+[user]
+    name = Kevin Meinon
+    email = "kevin.meinon@candylabs.de"
+[core]
+    autocrlf = input

@@ -1,0 +1,13 @@
+.history
+.vscode
+.intellij
+.idea
+
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+*.sql
+*.sqlite

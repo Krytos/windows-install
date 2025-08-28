@@ -1,0 +1,42 @@
+[user]
+	name = Kevin Meinon
+	email = kevin@meinon.de
+[safe]
+	directory = *
+[core]
+	excludesFile = ~/.gitignore
+	autocrlf = false
+	pager = delta
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[rebase]
+	autostash = true
+	autosquash = true
+	updateRefs = true
+[push]
+	autoSetupRemote = true
+	followtags = true
+[commit]
+	verbose = true
+[rerere]
+	enabled = true
+	autoupdate = true
+[help]
+	autocorrect = 1
+[interactive]
+	diffFilter = delta
+[diff]
+	algorithm = histogram
+[includeif "gitdir:**/code/work/"]
+	path = ~/.gitconfig_work
+
+[includeif "gitdir:**/Dev/work/"]
+	path = ~/.gitconfig_work
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+	insteadOf = gh:
+[branch]
+	sort = -committerdate
