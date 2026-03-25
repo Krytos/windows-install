@@ -1,0 +1,5 @@
+[wsl2]
+processors=4
+memory=17179869184
+networkingMode=Mirrored
+guiApplications=false
